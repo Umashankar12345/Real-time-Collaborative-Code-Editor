@@ -1,23 +1,29 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import Editor, { useMonaco } from '@monaco-editor/react';
 import axios from 'axios';
-import { Save, Cloud, Check } from 'lucide-react';
+import { Save, Cloud, Check, Play, Square, Bug, X, Search, Terminal } from 'lucide-react';
+import { SettingsContext } from '../contexts/SettingsContext';
 
-const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
+const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, setActiveFileId, handleCloseTab, socket, onToggleBottomPanel }) => {
+  const file = files.find(f => f.id === activeFileId);
   const [content, setContent] = useState('');
-  const [language, setLanguage] = useState(file?.language || 'javascript');
-  const [syncStatus, setSyncStatus] = useState('● Synced'); // '● Synced', '↻ Syncing...'
+  const [language, setLanguage] = useState('javascript');
+  const [syncStatus, setSyncStatus] = useState('✓ Synced'); // '● Saving...', '✓ Saved locally', '✓ Synced'
+  
+  const { settings } = useContext(SettingsContext);
+  
   const editorRef = useRef(null);
   const isRemoteUpdate = useRef(false);
   const decorationsRef = useRef({});
   const monaco = useMonaco();
   
-  const languages = ['javascript', 'python', 'cpp', 'java', 'html'];
+  const languages = ['javascript', 'typescript', 'python', 'cpp', 'java', 'c', 'go', 'html', 'css', 'json'];
 
   useEffect(() => {
     if (file) {
       setContent(file.content || '');
       setLanguage(file.language || 'javascript');
+      setSyncStatus('✓ Synced');
     }
   }, [file]);
 
@@ -28,26 +34,28 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
       if (fileId === file.id) {
         isRemoteUpdate.current = true;
         setContent(newContent);
+        setSyncStatus('✓ Synced with room');
       }
     };
     
     const handleCursorUpdate = ({ userId, username, fileId, position, color }) => {
-      if (fileId !== file.id || !editorRef.current || !monaco) return;
+      if (fileId !== file.id || !editorRef.current || !monaco || !settings.showCursors) return;
       
       const decorationId = decorationsRef.current[userId];
+      
+      const hoverMessage = settings.showUserNames ? { value: username } : undefined;
       
       const decorations = [
         {
           range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
           options: {
             className: `remote-cursor remote-cursor-${userId}`,
-            hoverMessage: { value: username },
+            hoverMessage,
             isWholeLine: false,
           }
         }
       ];
       
-      // Inject CSS for this specific user's cursor if it doesn't exist
       if (!document.getElementById(`style-${userId}`)) {
         const style = document.createElement('style');
         style.id = `style-${userId}`;
@@ -56,6 +64,7 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
             border-left: 2px solid ${color};
             position: relative;
           }
+          ${settings.showUserNames ? `
           .remote-cursor-${userId}::after {
             content: '${username}';
             position: absolute;
@@ -69,7 +78,7 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
             white-space: nowrap;
             z-index: 10;
             pointer-events: none;
-          }
+          }` : ''}
         `;
         document.head.appendChild(style);
       }
@@ -89,7 +98,7 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
       socket.off('document:update', handleDocUpdate);
       socket.off('cursor:update', handleCursorUpdate);
     };
-  }, [socket, file, monaco]);
+  }, [socket, file, monaco, settings.showCursors, settings.showUserNames]);
 
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
@@ -98,12 +107,10 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
   const handleEditorChange = (value) => {
     if (!isRemoteUpdate.current) {
       setContent(value);
-      setSyncStatus('↻ Syncing...');
+      setSyncStatus('● Saving...');
       
-      // Emit socket event
       socket?.emit('document:update', { roomId, fileId: file.id, content: value });
       
-      // Save to backend occasionally (debounced simulation)
       saveToBackend(value);
     } else {
       isRemoteUpdate.current = false;
@@ -121,7 +128,6 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
   };
 
   const saveToBackend = useCallback(
-    // debounce implementation is omitted for brevity, using simple timeout
     (value) => {
       setTimeout(async () => {
         try {
@@ -130,7 +136,7 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
             { content: value },
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          setSyncStatus('● Synced');
+          setSyncStatus('✓ Saved locally');
         } catch (error) {
           setSyncStatus('Error saving');
         }
@@ -156,11 +162,52 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
     }
   };
 
+  if (!file) {
+    return (
+      <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)' }}>
+        Select a file to start collaborating
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Editor Header */}
+      {/* Tabs */}
+      <div style={{ display: 'flex', backgroundColor: 'var(--bg-secondary)', overflowX: 'auto', borderBottom: '1px solid var(--border-color)' }}>
+        {openFiles.map(id => {
+          const tabFile = files.find(f => f.id === id);
+          if (!tabFile) return null;
+          const isActive = id === activeFileId;
+          return (
+            <div 
+              key={id} 
+              onClick={() => setActiveFileId(id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                backgroundColor: isActive ? 'var(--bg-primary)' : 'var(--bg-secondary)',
+                borderTop: isActive ? '2px solid var(--accent-color)' : '2px solid transparent',
+                borderRight: '1px solid var(--border-color)',
+                color: isActive ? 'var(--text-accent)' : 'var(--text-secondary)',
+                fontSize: '13px'
+              }}
+            >
+              <span>{tabFile.name}</span>
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleCloseTab(id); }}
+                style={{ display: 'flex', alignItems: 'center', color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Editor Toolbar */}
       <div style={{
-        padding: '10px 20px',
+        padding: '8px 16px',
         backgroundColor: 'var(--bg-primary)',
         borderBottom: '1px solid var(--border-color)',
         display: 'flex',
@@ -168,7 +215,17 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
         justifyContent: 'space-between'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '15px', color: 'var(--text-accent)' }}>{file.name}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--border-color)', paddingRight: '16px' }}>
+            <button title="Run (Execution not configured)" style={{ color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.6, cursor: 'not-allowed' }}>
+              <Play size={16} /> Run
+            </button>
+            <button title="Stop" style={{ color: 'var(--error-color)', display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.6, cursor: 'not-allowed' }}>
+              <Square size={16} /> Stop
+            </button>
+            <button title="Debug" style={{ color: 'var(--warning-color)', display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.6, cursor: 'not-allowed' }}>
+              <Bug size={16} /> Debug
+            </button>
+          </div>
           
           <select 
             value={language}
@@ -177,9 +234,10 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
               backgroundColor: 'var(--bg-tertiary)', 
               color: 'var(--text-primary)',
               border: '1px solid var(--border-light)',
-              padding: '4px 8px',
+              padding: '2px 8px',
               borderRadius: '4px',
               outline: 'none',
+              fontSize: '12px',
               cursor: 'pointer'
             }}
           >
@@ -187,26 +245,37 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
               <option key={lang} value={lang}>{lang.toUpperCase()}</option>
             ))}
           </select>
+          
+          <button style={{ color: 'var(--text-secondary)' }} title="Search (Ctrl+F)">
+            <Search size={16} />
+          </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-          {syncStatus === '● Synced' ? <Check size={14} color="var(--success-color)"/> : <Cloud size={14} />}
-          <span>{syncStatus}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+            {syncStatus.includes('✓') ? <Check size={14} color="var(--success-color)"/> : <Cloud size={14} />}
+            <span>{syncStatus}</span>
+          </div>
+          <button onClick={onToggleBottomPanel} style={{ color: 'var(--text-secondary)' }} title="Toggle Bottom Panel">
+            <Terminal size={16} />
+          </button>
         </div>
       </div>
 
       {/* Editor */}
-      <div style={{ flex: 1, paddingBottom: '20px' }}>
+      <div style={{ flex: 1, paddingBottom: '0px' }}>
         <Editor
           height="100%"
           language={language}
-          theme="vs-dark"
+          theme={settings.theme}
           value={content}
           onChange={handleEditorChange}
           onMount={handleEditorDidMount}
           options={{
-            minimap: { enabled: false },
-            fontSize: 14,
+            minimap: { enabled: settings.minimap },
+            fontSize: settings.fontSize,
+            wordWrap: settings.wordWrap,
+            tabSize: settings.tabSize,
             fontFamily: 'var(--font-mono)',
             padding: { top: 16 },
             scrollBeyondLastLine: false,
@@ -218,10 +287,8 @@ const EditorArea = ({ roomId, token, file, socket, setFiles }) => {
         />
       </div>
       
-      {/* Attach listener to Monaco after mount if needed. We can do it inside Editor container. */}
       {editorRef.current && (
          <div style={{ display: 'none' }}>
-           {/* Setup cursor listener */}
            {setTimeout(() => {
               if (editorRef.current && !editorRef.current._hasAttachedCursorListener) {
                 editorRef.current.onDidChangeCursorPosition(handleCursorSelectionChange);

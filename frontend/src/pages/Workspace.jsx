@@ -6,6 +6,9 @@ import { AuthContext } from '../contexts/AuthContext';
 import TopHeader from '../components/TopHeader';
 import FileExplorer from '../components/FileExplorer';
 import EditorArea from '../components/EditorArea';
+import ChatPanel from '../components/ChatPanel';
+import BottomPanel from '../components/BottomPanel';
+import SettingsModal from '../components/SettingsModal';
 
 const Workspace = () => {
   const { roomId } = useParams();
@@ -16,10 +19,16 @@ const Workspace = () => {
   const [connectionStatus, setConnectionStatus] = useState('Connecting');
   const [collaborators, setCollaborators] = useState([]);
   const [files, setFiles] = useState([]);
+  
+  // Tab Management
+  const [openFiles, setOpenFiles] = useState([]);
   const [activeFileId, setActiveFileId] = useState(null);
+
+  // Layout State
+  const [showSettings, setShowSettings] = useState(false);
+  const [showBottomPanel, setShowBottomPanel] = useState(true);
   
   useEffect(() => {
-    // Setup Socket
     const newSocket = io('http://localhost:5000', {
       auth: { token: user.token }
     });
@@ -39,11 +48,7 @@ const Workspace = () => {
       setConnectionStatus('Reconnecting...');
     });
     
-    // Presence events
-    newSocket.on('presence:list', (users) => {
-      setCollaborators(users);
-    });
-    
+    newSocket.on('presence:list', (users) => setCollaborators(users));
     newSocket.on('presence:user-joined', (newUser) => {
       setCollaborators(prev => {
         if (!prev.find(u => u.username === newUser.username)) {
@@ -52,35 +57,21 @@ const Workspace = () => {
         return prev;
       });
     });
-    
     newSocket.on('presence:user-left', ({ username }) => {
       setCollaborators(prev => prev.filter(u => u.username !== username));
     });
     
-    // File events
-    newSocket.on('file:created', (file) => {
-      setFiles(prev => [...prev, file]);
-    });
-    
-    newSocket.on('file:renamed', ({ fileId, name }) => {
-      setFiles(prev => prev.map(f => f.id === fileId ? { ...f, name } : f));
-    });
-    
+    newSocket.on('file:created', (file) => setFiles(prev => [...prev, file]));
+    newSocket.on('file:renamed', ({ fileId, name }) => setFiles(prev => prev.map(f => f.id === fileId ? { ...f, name } : f)));
     newSocket.on('file:deleted', ({ fileId }) => {
       setFiles(prev => prev.filter(f => f.id !== fileId));
-      if (activeFileId === fileId) setActiveFileId(null);
+      handleCloseTab(fileId);
     });
-    
-    newSocket.on('file:language-changed', ({ fileId, language }) => {
-      setFiles(prev => prev.map(f => f.id === fileId ? { ...f, language } : f));
-    });
+    newSocket.on('file:language-changed', ({ fileId, language }) => setFiles(prev => prev.map(f => f.id === fileId ? { ...f, language } : f)));
 
-    return () => {
-      newSocket.disconnect();
-    };
+    return () => newSocket.disconnect();
   }, [roomId, user.token]);
   
-  // Fetch initial files
   useEffect(() => {
     const fetchFiles = async () => {
       try {
@@ -88,9 +79,6 @@ const Workspace = () => {
           headers: { Authorization: `Bearer ${user.token}` }
         });
         setFiles(res.data);
-        if (res.data.length > 0) {
-          setActiveFileId(res.data[0].id);
-        }
       } catch (error) {
         console.error('Error fetching files', error);
       }
@@ -103,15 +91,34 @@ const Workspace = () => {
     navigate('/login');
   };
 
+  const handleOpenFile = (fileId) => {
+    if (!openFiles.includes(fileId)) {
+      setOpenFiles([...openFiles, fileId]);
+    }
+    setActiveFileId(fileId);
+  };
+
+  const handleCloseTab = (fileId) => {
+    const newOpenFiles = openFiles.filter(id => id !== fileId);
+    setOpenFiles(newOpenFiles);
+    if (activeFileId === fileId) {
+      setActiveFileId(newOpenFiles.length > 0 ? newOpenFiles[newOpenFiles.length - 1] : null);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      
       <TopHeader 
         roomId={roomId}
         connectionStatus={connectionStatus}
         collaborators={collaborators}
         username={user.username}
         onLogout={handleLogout}
+        onOpenSettings={() => setShowSettings(true)}
       />
+      
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <FileExplorer 
           roomId={roomId}
@@ -119,24 +126,35 @@ const Workspace = () => {
           files={files}
           setFiles={setFiles}
           activeFileId={activeFileId}
-          setActiveFileId={setActiveFileId}
+          onOpenFile={handleOpenFile}
           socket={socket}
         />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {activeFileId ? (
-            <EditorArea 
-              roomId={roomId}
-              token={user.token}
-              file={files.find(f => f.id === activeFileId)}
-              socket={socket}
-              setFiles={setFiles}
-            />
-          ) : (
-            <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)' }}>
-              Select a file to start collaborating
-            </div>
-          )}
+        
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <EditorArea 
+            roomId={roomId}
+            token={user.token}
+            files={files}
+            setFiles={setFiles}
+            openFiles={openFiles}
+            activeFileId={activeFileId}
+            setActiveFileId={setActiveFileId}
+            handleCloseTab={handleCloseTab}
+            socket={socket}
+            onToggleBottomPanel={() => setShowBottomPanel(!showBottomPanel)}
+          />
+          
+          <BottomPanel 
+            isOpen={showBottomPanel} 
+            onClose={() => setShowBottomPanel(false)} 
+          />
         </div>
+
+        <ChatPanel 
+          socket={socket} 
+          roomId={roomId} 
+          username={user.username} 
+        />
       </div>
     </div>
   );

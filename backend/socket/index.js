@@ -97,6 +97,23 @@ module.exports = (io) => {
       socket.to(roomId).emit('file:language-changed', { fileId, language });
     });
 
+    socket.on('chat:message', ({ roomId, text }) => {
+      const userData = connectedUsers.get(socket.id);
+      if (userData) {
+        // Broadcast to everyone in the room, including sender, for simplicity,
+        // or just emit to the room. The sender can optionally optimistically render.
+        // Let's emit to the room (others) and also the sender if needed, but normally
+        // to(roomId) only sends to others. We'll rely on the frontend to append its own messages.
+        socket.to(roomId).emit('chat:message', {
+          id: Date.now().toString(),
+          username: userData.username,
+          color: userData.color,
+          text,
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
     socket.on('disconnect', () => {
       const userData = connectedUsers.get(socket.id);
       if (userData) {
