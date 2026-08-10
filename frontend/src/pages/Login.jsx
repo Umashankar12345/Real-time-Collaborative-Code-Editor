@@ -31,41 +31,53 @@ const Login = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '40px', borderRadius: '8px', width: '400px', border: '1px solid var(--border-color)' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '24px', color: 'var(--text-accent)' }}>
-          {isLogin ? 'Login to CodeCollab' : 'Create an Account'}
+    <div className="flex justify-center items-center h-screen bg-[#1e1e1e] font-sans">
+      <div className="bg-[#252526] p-10 rounded-2xl w-[400px] border border-[#3e3e42] shadow-2xl transition-all duration-300 hover:shadow-[#007acc]/10">
+        <h2 className="text-center mb-8 text-white text-3xl font-bold tracking-tight">
+          {isLogin ? 'Welcome Back' : 'Create Account'}
         </h2>
         
-        {error && <div style={{ color: 'var(--error-color)', marginBottom: '16px', textAlign: 'center' }}>{error}</div>}
+        {error && (
+          <div className="text-[#f14c4c] bg-[#f14c4c]/10 p-3 rounded-lg mb-6 text-center text-sm font-medium border border-[#f14c4c]/20">
+            {error}
+          </div>
+        )}
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Username</label>
+            <label className="block mb-2 text-[#858585] text-sm font-medium transition-colors focus-within:text-[#007acc]">Username</label>
             <input 
               type="text" 
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', color: 'white' }}
+              className="w-full p-3.5 rounded-xl border border-[#3e3e42] bg-[#1e1e1e] text-white focus:outline-none focus:border-[#007acc] focus:ring-2 focus:ring-[#007acc]/30 transition-all placeholder:text-[#454545]"
+              placeholder="Enter your username"
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Password</label>
+            <label className="block mb-2 text-[#858585] text-sm font-medium transition-colors focus-within:text-[#007acc]">Password</label>
             <input 
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', color: 'white' }}
+              className="w-full p-3.5 rounded-xl border border-[#3e3e42] bg-[#1e1e1e] text-white focus:outline-none focus:border-[#007acc] focus:ring-2 focus:ring-[#007acc]/30 transition-all placeholder:text-[#454545]"
+              placeholder="••••••••"
             />
           </div>
-          <button type="submit" className="btn-primary" style={{ marginTop: '8px', padding: '12px' }}>
-            {isLogin ? 'Login' : 'Register'}
+          <button 
+            type="submit" 
+            className="mt-4 p-3.5 w-full bg-[#007acc] text-white rounded-xl font-semibold hover:bg-[#0062a3] hover:shadow-lg hover:shadow-[#007acc]/20 transition-all active:scale-[0.98]"
+          >
+            {isLogin ? 'Sign In' : 'Sign Up'}
           </button>
         </form>
         
-        <div style={{ marginTop: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+        <div className="mt-8 text-center text-[#858585] text-sm">
           {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <button onClick={() => setIsLogin(!isLogin)} style={{ color: 'var(--accent-color)', textDecoration: 'underline' }}>
+          <button 
+            onClick={() => setIsLogin(!isLogin)} 
+            className="text-[#007acc] hover:text-[#3399ff] hover:underline font-medium transition-colors ml-1"
+          >
             {isLogin ? 'Register here' : 'Login here'}
           </button>
         </div>
