@@ -4,6 +4,7 @@ import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import Login from './pages/Login';
 import Workspace from './pages/Workspace';
+import Dashboard from './pages/Dashboard';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = React.useContext(AuthContext);
@@ -21,7 +22,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/" element={
               <ProtectedRoute>
-                <Navigate to={`/room/default-room-${Math.floor(Math.random()*1000)}`} />
+                <Dashboard />
               </ProtectedRoute>
             } />
             <Route path="/room/:roomId" element={

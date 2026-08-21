@@ -9,6 +9,8 @@ import EditorArea from '../components/EditorArea';
 import ChatPanel from '../components/ChatPanel';
 import BottomPanel from '../components/BottomPanel';
 import SettingsModal from '../components/SettingsModal';
+import StatusBar from '../components/StatusBar';
+import { Files, Search, GitBranch, Play, Settings as SettingsIcon } from 'lucide-react';
 
 const Workspace = () => {
   const { roomId } = useParams();
@@ -112,10 +114,6 @@ const Workspace = () => {
     }
   };
 
-import StatusBar from '../components/StatusBar';
-import { Files, Search, GitBranch, Play, Settings as SettingsIcon } from 'lucide-react';
-
-// Inside Workspace return statement:
   return (
     <div className="flex flex-col h-screen w-full bg-[#1e1e1e] overflow-hidden font-sans">
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
