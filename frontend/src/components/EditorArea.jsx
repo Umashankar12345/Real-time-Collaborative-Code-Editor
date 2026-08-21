@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import Editor, { useMonaco } from '@monaco-editor/react';
 import axios from 'axios';
-import { Save, Cloud, Check, Play, Square, Bug, X, Search, Terminal } from 'lucide-react';
+import { Save, Cloud, Check, Play, Square, Bug, X, Search, Terminal, Box } from 'lucide-react';
 import { SettingsContext } from '../contexts/SettingsContext';
+import ThreeDViewport from './ThreeDViewport';
 
 const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, setActiveFileId, handleCloseTab, socket, onToggleBottomPanel }) => {
   const file = files.find(f => f.id === activeFileId);
@@ -162,18 +163,36 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
     }
   };
 
-  if (!file) {
+  if (!file && activeFileId !== '3d-view') {
     return (
-      <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)' }}>
-        Select a file to start collaborating
+      <div className="flex flex-1 justify-center items-center text-[var(--text-secondary)] bg-[var(--bg-primary)]">
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
+          <div className="w-16 h-16 bg-[#252526] flex items-center justify-center">
+            <Search size={24} className="text-[#3b3b3b]" />
+          </div>
+          <p className="font-medium tracking-wide text-xs">Select a file to start collaborating</p>
+        </div>
       </div>
     );
   }
 
+  const is3DView = activeFileId === '3d-view';
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="flex flex-col h-full w-full bg-[var(--bg-primary)]">
       {/* Tabs */}
-      <div style={{ display: 'flex', backgroundColor: 'var(--bg-secondary)', overflowX: 'auto', borderBottom: '1px solid var(--border-color)' }}>
+      <div className="flex overflow-x-auto bg-[#252526] custom-scrollbar shrink-0">
+        <div 
+          onClick={() => setActiveFileId('3d-view')}
+          className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors text-[13px] border-r border-[#3b3b3b] min-w-[120px] ${
+            is3DView 
+              ? 'bg-[var(--bg-primary)] text-white border-t border-t-[#007acc]' 
+              : 'bg-transparent text-[#969696] hover:bg-[#2a2d2e] border-t border-t-transparent'
+          }`}
+        >
+          <Box size={14} className={is3DView ? 'text-[#007acc]' : ''} />
+          <span>3D VIEW</span>
+        </div>
         {openFiles.map(id => {
           const tabFile = files.find(f => f.id === id);
           if (!tabFile) return null;
@@ -182,21 +201,18 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
             <div 
               key={id} 
               onClick={() => setActiveFileId(id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                backgroundColor: isActive ? 'var(--bg-primary)' : 'var(--bg-secondary)',
-                borderTop: isActive ? '2px solid var(--accent-color)' : '2px solid transparent',
-                borderRight: '1px solid var(--border-color)',
-                color: isActive ? 'var(--text-accent)' : 'var(--text-secondary)',
-                fontSize: '13px'
-              }}
+              className={`flex items-center gap-2 px-4 py-2 cursor-pointer transition-colors border-t-2 border-r border-r-[var(--border-color)] text-[13px] ${
+                isActive 
+                  ? 'bg-black/30 border-t-[var(--accent-color)] text-[var(--text-accent)] shadow-sm' 
+                  : 'bg-transparent border-t-transparent text-[var(--text-secondary)] hover:bg-white/5'
+              }`}
             >
-              <span>{tabFile.name}</span>
+              <span className="font-medium">{tabFile.name}</span>
               <button 
                 onClick={(e) => { e.stopPropagation(); handleCloseTab(id); }}
-                style={{ display: 'flex', alignItems: 'center', color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                className={`flex items-center p-0.5 rounded-sm transition-colors ${
+                  isActive ? 'text-[var(--text-secondary)] hover:text-white hover:bg-white/10' : 'text-transparent group-hover:text-[var(--text-secondary)] hover:bg-white/10'
+                }`}
               >
                 <X size={14} />
               </button>
@@ -205,69 +221,64 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
         })}
       </div>
 
-      {/* Editor Toolbar */}
-      <div style={{
-        padding: '8px 16px',
-        backgroundColor: 'var(--bg-primary)',
-        borderBottom: '1px solid var(--border-color)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--border-color)', paddingRight: '16px' }}>
-            <button title="Run (Execution not configured)" style={{ color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.6, cursor: 'not-allowed' }}>
-              <Play size={16} /> Run
+      {/* Viewport/Editor */}
+      {is3DView ? (
+        <div className="flex-1 overflow-hidden">
+          <ThreeDViewport />
+        </div>
+      ) : (
+        <>
+          {/* Editor Toolbar */}
+          <div className="px-3 py-1.5 bg-[#252526] border-y border-[#3b3b3b] flex items-center justify-between shadow-sm shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 border-r border-[var(--border-color)] pr-4">
+            <button className="flex items-center gap-1.5 text-[var(--success-color)] opacity-60 cursor-not-allowed hover:bg-white/5 px-2 py-1 rounded transition-colors text-[13px] font-medium">
+              <Play size={14} /> <span className="hidden sm:inline">Run</span>
             </button>
-            <button title="Stop" style={{ color: 'var(--error-color)', display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.6, cursor: 'not-allowed' }}>
-              <Square size={16} /> Stop
+            <button className="flex items-center gap-1.5 text-[var(--error-color)] opacity-60 cursor-not-allowed hover:bg-white/5 px-2 py-1 rounded transition-colors text-[13px] font-medium">
+              <Square size={14} /> <span className="hidden sm:inline">Stop</span>
             </button>
-            <button title="Debug" style={{ color: 'var(--warning-color)', display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.6, cursor: 'not-allowed' }}>
-              <Bug size={16} /> Debug
+            <button className="flex items-center gap-1.5 text-[var(--warning-color)] opacity-60 cursor-not-allowed hover:bg-white/5 px-2 py-1 rounded transition-colors text-[13px] font-medium">
+              <Bug size={14} /> <span className="hidden sm:inline">Debug</span>
             </button>
           </div>
           
           <select 
             value={language}
             onChange={handleLanguageChange}
-            style={{ 
-              backgroundColor: 'var(--bg-tertiary)', 
-              color: 'var(--text-primary)',
-              border: '1px solid var(--border-light)',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              outline: 'none',
-              fontSize: '12px',
-              cursor: 'pointer'
-            }}
+            className="bg-black/30 text-[var(--text-primary)] border border-[var(--border-light)] px-3 py-1 rounded-md outline-none text-[12px] font-medium cursor-pointer hover:border-[var(--accent-color)] transition-colors appearance-none pr-8 relative"
+            style={{ backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px top 50%', backgroundSize: '10px auto' }}
           >
             {languages.map(lang => (
               <option key={lang} value={lang}>{lang.toUpperCase()}</option>
             ))}
           </select>
           
-          <button style={{ color: 'var(--text-secondary)' }} title="Search (Ctrl+F)">
+          <button className="text-[var(--text-secondary)] hover:text-white hover:bg-white/10 p-1.5 rounded transition-colors">
             <Search size={16} />
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-            {syncStatus.includes('✓') ? <Check size={14} color="var(--success-color)"/> : <Cloud size={14} />}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-[12px] font-medium text-[var(--text-secondary)] bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
+            {syncStatus.includes('✓') ? <Check size={14} className="text-[var(--success-color)]"/> : <Cloud size={14} className="text-[var(--accent-color)] animate-pulse" />}
             <span>{syncStatus}</span>
           </div>
-          <button onClick={onToggleBottomPanel} style={{ color: 'var(--text-secondary)' }} title="Toggle Bottom Panel">
+          <button onClick={() => window.open('https://github.com', '_blank')} className="text-[var(--text-secondary)] hover:text-white hover:bg-white/10 p-1.5 rounded transition-colors" title="View on GitHub">
+            GitHub
+          </button>
+          <button onClick={onToggleBottomPanel} className="text-[var(--text-secondary)] hover:text-white hover:bg-[var(--accent-color)]/20 hover:text-[var(--accent-color)] p-1.5 rounded transition-colors" title="Toggle Terminal">
             <Terminal size={16} />
           </button>
         </div>
       </div>
 
       {/* Editor */}
-      <div style={{ flex: 1, paddingBottom: '0px' }}>
+      <div className="flex-1 bg-[#0b0f19]/80 backdrop-blur-md relative">
         <Editor
           height="100%"
           language={language}
-          theme={settings.theme}
+          theme={settings.theme || 'vs-dark'}
           value={content}
           onChange={handleEditorChange}
           onMount={handleEditorDidMount}
@@ -277,18 +288,21 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
             wordWrap: settings.wordWrap,
             tabSize: settings.tabSize,
             fontFamily: 'var(--font-mono)',
-            padding: { top: 16 },
+            padding: { top: 16, bottom: 16 },
             scrollBeyondLastLine: false,
             smoothScrolling: true,
             cursorBlinking: 'smooth',
             cursorSmoothCaretAnimation: true,
             renderWhitespace: 'selection',
+            lineNumbersMinChars: 4,
+            lineDecorationsWidth: 10,
           }}
         />
       </div>
       
-      {editorRef.current && (
-         <div style={{ display: 'none' }}>
+      
+      {editorRef.current && !is3DView && (
+         <div className="hidden">
            {setTimeout(() => {
               if (editorRef.current && !editorRef.current._hasAttachedCursorListener) {
                 editorRef.current.onDidChangeCursorPosition(handleCursorSelectionChange);
@@ -296,6 +310,8 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
               }
            }, 100)}
          </div>
+      )}
+        </>
       )}
     </div>
   );

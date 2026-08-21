@@ -6,9 +6,9 @@ const TopHeader = ({ roomId, connectionStatus, collaborators, username, onLogout
 
   const getStatusIcon = () => {
     switch(connectionStatus) {
-      case 'Connected': return <CheckCircle size={14} color="var(--success-color)" />;
-      case 'Disconnected': return <XCircle size={14} color="var(--error-color)" />;
-      default: return <Loader2 size={14} color="var(--warning-color)" className="animate-spin" />;
+      case 'Connected': return <CheckCircle size={16} className="text-[var(--success-color)]" />;
+      case 'Disconnected': return <XCircle size={16} className="text-[var(--error-color)]" />;
+      default: return <Loader2 size={16} className="text-[var(--warning-color)] animate-spin" />;
     }
   };
 
@@ -18,133 +18,111 @@ const TopHeader = ({ roomId, connectionStatus, collaborators, username, onLogout
   };
 
   return (
-    <div style={{
-      height: 'var(--header-height)',
-      backgroundColor: 'var(--bg-secondary)',
-      borderBottom: '1px solid var(--border-color)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 20px',
-      color: 'var(--text-primary)',
-      position: 'relative'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <div style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--text-accent)' }}>
-          CodeCollab IDE
+    <div className="h-[var(--header-height)] bg-[var(--bg-secondary)] backdrop-blur-md border-b border-[var(--border-color)] flex items-center justify-between px-6 text-[var(--text-primary)] relative z-20 shadow-sm">
+      <div className="flex items-center gap-6">
+        <div className="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-[var(--accent-color)] to-[var(--accent-secondary)] flex items-center gap-2 tracking-tight">
+          <span className="bg-gradient-to-br from-[var(--accent-color)] to-[var(--accent-secondary)] text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-md">&lt;/&gt;</span>
+          CodeCollab
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px' }}>
-          <span style={{ color: 'var(--text-secondary)' }}>Room: {roomId}</span>
+        <div className="flex items-center gap-3 text-sm">
+          <span className="text-[var(--text-secondary)] font-medium bg-black/20 px-3 py-1 rounded-md border border-[var(--border-light)]">Room: {roomId}</span>
           <button 
             onClick={copyRoomId}
-            style={{ padding: '2px 8px', backgroundColor: 'var(--bg-hover)', borderRadius: '4px', border: '1px solid var(--border-light)' }}
+            className="px-3 py-1 bg-[var(--bg-hover)] hover:bg-white/10 rounded-md border border-[var(--border-light)] transition-colors text-xs font-semibold"
           >
-            [🔗 Copy]
+            Copy ID
+          </button>
+          <button 
+            onClick={() => window.open('https://github.com', '_blank')}
+            className="px-3 py-1 bg-[#24292e] hover:bg-[#2f363d] text-white rounded-md flex items-center gap-1.5 transition-all shadow-sm text-xs font-semibold border border-white/10"
+          >
+            GitHub
           </button>
           <button 
             onClick={() => alert(`Invite Link: http://localhost:5173/room/${roomId}`)}
-            style={{ padding: '2px 8px', backgroundColor: 'var(--accent-color)', color: 'white', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}
+            className="px-3 py-1 bg-gradient-to-r from-[var(--accent-color)] to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-md flex items-center gap-1.5 transition-all shadow-sm text-xs font-semibold"
           >
-            <UserPlus size={12} /> Invite
+            <UserPlus size={14} /> Invite
           </button>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', marginLeft: '10px' }}>
+        <div className="flex items-center gap-2 text-sm ml-4 font-medium bg-black/20 px-3 py-1 rounded-full border border-[var(--border-light)]">
           {getStatusIcon()}
-          <span style={{ color: connectionStatus === 'Disconnected' ? 'var(--error-color)' : 'inherit' }}>
+          <span className={connectionStatus === 'Disconnected' ? 'text-[var(--error-color)]' : 'text-gray-300'}>
             {connectionStatus}
           </span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+      <div className="flex items-center gap-5">
         <div 
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative', cursor: 'pointer' }}
+          className="flex items-center gap-2.5 relative cursor-pointer hover:bg-[var(--bg-hover)] p-2 rounded-lg transition-colors"
           onClick={() => setShowAvatarDropdown(!showAvatarDropdown)}
         >
-          <Users size={16} color="var(--text-secondary)" />
-          <div style={{ display: 'flex', gap: '4px' }}>
-            {collaborators.slice(0, 3).map(c => (
+          <Users size={18} className="text-[var(--text-secondary)]" />
+          <div className="flex -space-x-2">
+            {collaborators.slice(0, 3).map((c, i) => (
               <div 
                 key={c.username}
                 title={c.username}
-                style={{
-                  width: '24px', height: '24px', borderRadius: '50%',
-                  backgroundColor: c.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '11px', fontWeight: 'bold', color: 'white',
-                  border: '2px solid var(--bg-secondary)'
-                }}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-[2px] border-[var(--bg-secondary)] shadow-sm z-10 hover:z-20 transition-transform hover:scale-110"
+                style={{ backgroundColor: c.color || `hsl(${i * 60}, 70%, 50%)` }}
               >
                 {c.username.substring(0, 2).toUpperCase()}
               </div>
             ))}
             {collaborators.length > 3 && (
-              <div style={{
-                width: '24px', height: '24px', borderRadius: '50%',
-                backgroundColor: 'var(--bg-tertiary)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)',
-                border: '2px solid var(--bg-secondary)'
-              }}>
+              <div className="w-7 h-7 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[10px] font-bold text-[var(--text-secondary)] border-[2px] border-[var(--bg-secondary)] z-0">
                 +{collaborators.length - 3}
               </div>
             )}
           </div>
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+          <span className="text-sm font-medium text-[var(--text-secondary)] bg-black/30 px-2 py-0.5 rounded-md">
             {collaborators.length}
           </span>
 
           {showAvatarDropdown && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              right: 0,
-              marginTop: '10px',
-              width: '200px',
-              backgroundColor: 'var(--bg-secondary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              padding: '8px 0',
-              zIndex: 100,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
-            }}>
-              <div style={{ padding: '4px 12px', fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-light)', marginBottom: '4px' }}>
-                ONLINE USERS
+            <div className="absolute top-full right-0 mt-2 w-52 bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-light)] rounded-xl py-2 z-[100] shadow-xl animate-fade-in">
+              <div className="px-4 py-1 text-[10px] font-bold text-[var(--text-secondary)] border-b border-[var(--border-light)] mb-1 tracking-wider">
+                ONLINE COLLABORATORS
               </div>
-              {collaborators.map(c => (
-                <div key={c.username} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', fontSize: '13px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success-color)' }}></div>
-                  <span style={{ color: 'var(--text-primary)' }}>{c.username}</span>
-                </div>
-              ))}
+              <div className="max-h-48 overflow-y-auto">
+                {collaborators.map(c => (
+                  <div key={c.username} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 transition-colors">
+                    <div className="relative">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{ backgroundColor: c.color || '#3b82f6' }}>
+                        {c.username.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-[var(--success-color)] border border-[var(--bg-secondary)]"></div>
+                    </div>
+                    <span className="text-sm text-[var(--text-primary)] font-medium truncate">{c.username}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
         
-        <div style={{ borderLeft: '1px solid var(--border-color)', height: '20px' }}></div>
+        <div className="h-6 w-px bg-[var(--border-light)]"></div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="flex items-center gap-1 bg-black/20 p-1 rounded-lg border border-[var(--border-light)]">
+          <span className="text-sm font-medium px-3 text-gray-300">{username}</span>
+          
           <button 
             onClick={onOpenSettings}
-            style={{ color: 'var(--text-secondary)', padding: '4px', borderRadius: '4px' }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            className="text-[var(--text-secondary)] hover:text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
             title="Settings"
           >
-            <Settings size={16} />
+            <Settings size={18} />
           </button>
-
-          <span style={{ fontSize: '13px', marginLeft: '4px' }}>{username}</span>
           
           <button 
             onClick={onLogout}
-            style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', padding: '4px 8px', borderRadius: '4px' }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-[var(--error-color)] p-1.5 rounded-md hover:bg-[var(--error-color)]/10 transition-colors"
+            title="Logout"
           >
-            <LogOut size={14} /> Logout
+            <LogOut size={18} />
           </button>
         </div>
       </div>

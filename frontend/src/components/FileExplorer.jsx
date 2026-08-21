@@ -92,14 +92,7 @@ const FileExplorer = ({ roomId, token, files, setFiles, activeFileId, onOpenFile
 
   return (
     <div 
-      style={{
-        width: '250px',
-        backgroundColor: 'var(--bg-secondary)',
-        borderRight: '1px solid var(--border-color)',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative'
-      }}
+      className="flex flex-col h-full bg-transparent w-full relative"
       onContextMenu={(e) => {
         if (e.target === e.currentTarget) {
           e.preventDefault();
@@ -107,41 +100,32 @@ const FileExplorer = ({ roomId, token, files, setFiles, activeFileId, onOpenFile
         }
       }}
     >
-      <div style={{ 
-        padding: '12px 16px', 
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <span style={{ fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px', color: 'var(--text-secondary)' }}>
+      <div className="px-4 py-3 border-b border-[var(--border-color)] flex justify-between items-center bg-black/20">
+        <span className="text-[11px] font-bold tracking-widest text-[var(--text-secondary)]">
           EXPLORER
         </span>
-        <div style={{ display: 'flex', gap: '4px' }}>
+        <div className="flex gap-1">
           <button 
             onClick={() => setIsCreating(true)}
-            style={{ padding: '4px', borderRadius: '4px', color: 'var(--text-secondary)' }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            className="p-1.5 rounded-md text-[var(--text-secondary)] hover:bg-white/10 hover:text-white transition-colors"
             title="New File"
           >
-            <FileText size={14} />
+            <FileText size={16} />
           </button>
           <button 
             onClick={() => alert('Folder support coming soon')}
-            style={{ padding: '4px', borderRadius: '4px', color: 'var(--text-secondary)' }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            className="p-1.5 rounded-md text-[var(--text-secondary)] hover:bg-white/10 hover:text-white transition-colors"
             title="New Folder"
           >
-            <FolderPlus size={14} />
+            <FolderPlus size={16} />
           </button>
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0' }}>
+      <div className="flex-1 overflow-y-auto py-2">
         {isCreating && (
-          <div style={{ padding: '4px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <File size={14} color="var(--text-secondary)" />
+          <div className="px-4 py-1.5 flex items-center gap-2 animate-fade-in">
+            <File size={16} className="text-[var(--text-secondary)]" />
             <input 
               autoFocus
               value={newFileName}
@@ -151,113 +135,90 @@ const FileExplorer = ({ roomId, token, files, setFiles, activeFileId, onOpenFile
                 if (e.key === 'Escape') setIsCreating(false);
               }}
               onBlur={() => setIsCreating(false)}
-              style={{ flex: 1, background: 'var(--bg-tertiary)', border: '1px solid var(--accent-color)', color: 'white', padding: '2px 4px', fontSize: '13px', outline: 'none' }}
+              className="flex-1 bg-black/30 border border-[var(--accent-color)] rounded text-white px-2 py-0.5 text-[13px] outline-none shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+              placeholder="Filename..."
             />
           </div>
         )}
         
-        {files.map(file => (
-          <div 
-            key={file.id}
-            onClick={() => onOpenFile(file.id)}
-            onContextMenu={(e) => handleContextMenu(e, file)}
-            style={{ 
-              padding: '4px 16px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              cursor: 'pointer',
-              backgroundColor: activeFileId === file.id ? 'var(--bg-hover)' : 'transparent',
-              color: activeFileId === file.id ? 'var(--text-accent)' : 'var(--text-primary)',
-              fontSize: '13px'
-            }}
-            onMouseOver={(e) => {
-              if (activeFileId !== file.id) e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
-            }}
-            onMouseOut={(e) => {
-              if (activeFileId !== file.id) e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            <File size={14} color="var(--text-secondary)" style={{ marginRight: '8px' }} />
-            {editingId === file.id ? (
-              <input 
-                autoFocus
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') { e.stopPropagation(); handleRenameFile(file.id); }
-                  if (e.key === 'Escape') { e.stopPropagation(); setEditingId(null); }
-                }}
-                onBlur={() => handleRenameFile(file.id)}
-                style={{ flex: 1, background: 'var(--bg-tertiary)', border: '1px solid var(--accent-color)', color: 'white', padding: '0px 4px', fontSize: '13px', outline: 'none' }}
+        <div className="flex flex-col gap-0.5 px-1">
+          {files.map(file => (
+            <div 
+              key={file.id}
+              onClick={() => onOpenFile(file.id)}
+              onContextMenu={(e) => handleContextMenu(e, file)}
+              className={`px-3 py-1.5 flex items-center cursor-pointer rounded-lg mx-1 transition-all duration-200 group ${
+                activeFileId === file.id 
+                  ? 'bg-[var(--accent-color)]/20 text-[var(--text-accent)] border border-[var(--accent-color)]/30' 
+                  : 'text-[var(--text-primary)] hover:bg-white/5 border border-transparent'
+              }`}
+            >
+              <File 
+                size={16} 
+                className={`mr-2.5 transition-colors ${activeFileId === file.id ? 'text-[var(--accent-color)]' : 'text-[var(--text-secondary)] group-hover:text-gray-300'}`} 
               />
-            ) : (
-              <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                {file.name}
-              </span>
-            )}
-          </div>
-        ))}
+              {editingId === file.id ? (
+                <input 
+                  autoFocus
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.stopPropagation(); handleRenameFile(file.id); }
+                    if (e.key === 'Escape') { e.stopPropagation(); setEditingId(null); }
+                  }}
+                  onBlur={() => handleRenameFile(file.id)}
+                  className="flex-1 bg-black/50 border border-[var(--accent-color)] rounded text-white px-1.5 py-0.5 text-[13px] outline-none"
+                />
+              ) : (
+                <span className="truncate font-medium text-[13px]">
+                  {file.name}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {contextMenu && (
-        <div style={{
-          position: 'fixed',
-          top: contextMenu.y,
-          left: contextMenu.x,
-          backgroundColor: 'var(--bg-secondary)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '4px',
-          padding: '4px 0',
-          zIndex: 1000,
-          minWidth: '150px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-          fontSize: '13px'
-        }}>
+        <div 
+          className="fixed bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--border-light)] rounded-lg py-1.5 z-[1000] min-w-[160px] shadow-2xl animate-fade-in"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
           {contextMenu.file ? (
             <>
               <div 
-                className="context-menu-item"
-                style={{ padding: '6px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                className="px-4 py-2 cursor-pointer flex items-center gap-2.5 text-[13px] hover:bg-white/10 transition-colors text-[var(--text-primary)]"
                 onClick={() => { setEditingId(contextMenu.file.id); setEditName(contextMenu.file.name); }}
               >
-                <Edit2 size={14} /> Rename
+                <Edit2 size={15} /> Rename
               </div>
               <div 
-                className="context-menu-item"
-                style={{ padding: '6px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                className="px-4 py-2 cursor-pointer flex items-center gap-2.5 text-[13px] hover:bg-white/10 transition-colors text-[var(--text-primary)]"
                 onClick={() => downloadFile(contextMenu.file)}
               >
-                <Download size={14} /> Download
+                <Download size={15} /> Download
               </div>
-              <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }}></div>
+              <div className="h-px bg-[var(--border-color)] my-1"></div>
               <div 
-                className="context-menu-item"
-                style={{ padding: '6px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--error-color)' }}
+                className="px-4 py-2 cursor-pointer flex items-center gap-2.5 text-[13px] hover:bg-[var(--error-color)]/20 text-[var(--error-color)] transition-colors"
                 onClick={() => handleDeleteFile(contextMenu.file.id)}
               >
-                <Trash2 size={14} /> Delete
+                <Trash2 size={15} /> Delete
               </div>
             </>
           ) : (
             <>
               <div 
-                className="context-menu-item"
-                style={{ padding: '6px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                className="px-4 py-2 cursor-pointer flex items-center gap-2.5 text-[13px] hover:bg-white/10 transition-colors text-[var(--text-primary)]"
                 onClick={() => setIsCreating(true)}
               >
-                <FileText size={14} /> New File
+                <FileText size={15} /> New File
               </div>
             </>
           )}
         </div>
       )}
-      
-      <style dangerouslySetInnerHTML={{__html: `
-        .context-menu-item:hover {
-          background-color: var(--bg-hover);
-        }
-      `}} />
     </div>
   );
 };

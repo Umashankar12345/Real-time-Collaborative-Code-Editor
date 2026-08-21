@@ -32,7 +32,7 @@ const ChatPanel = ({ socket, roomId, username }) => {
     const msg = {
       id: Date.now().toString() + Math.random(),
       username,
-      color: '#fff', // We can let local user be white or fetch their color
+      color: 'var(--accent-color)', // Highlight local user with accent
       text: input,
       timestamp: new Date().toISOString()
     };
@@ -43,86 +43,57 @@ const ChatPanel = ({ socket, roomId, username }) => {
   };
 
   return (
-    <div style={{
-      width: '300px',
-      backgroundColor: 'var(--bg-secondary)',
-      borderLeft: '1px solid var(--border-color)',
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%'
-    }}>
-      <div style={{
-        padding: '12px 16px',
-        borderBottom: '1px solid var(--border-color)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        <MessageSquare size={16} color="var(--text-secondary)" />
-        <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px', color: 'var(--text-secondary)' }}>
+    <div className="flex flex-col h-full bg-[#252526] w-full text-[#cccccc]">
+      <div className="px-3 py-2 flex items-center gap-2 shrink-0">
+        <span className="text-[11px] font-semibold tracking-wide text-[#cccccc] uppercase">
           TEAM CHAT
         </span>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {messages.map(msg => (
-          <div key={msg.id} style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '12px', color: msg.isMe ? 'var(--text-secondary)' : msg.color, marginBottom: '4px', fontWeight: 'bold' }}>
-              {msg.isMe ? 'You' : msg.username}
-            </span>
-            <div style={{ 
-              backgroundColor: msg.isMe ? 'var(--bg-hover)' : 'var(--bg-tertiary)',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              fontSize: '13px',
-              color: 'var(--text-primary)',
-              wordBreak: 'break-word'
-            }}>
-              {msg.text}
+      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
+        {messages.map(msg => {
+          const timeString = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          return (
+            <div key={msg.id} className="flex flex-col animate-fade-in">
+              <div className="flex items-baseline gap-2 mb-0.5">
+                <span 
+                  className="text-[12px] font-semibold"
+                  style={{ color: msg.isMe ? '#cccccc' : (msg.color || '#007acc') }}
+                >
+                  {msg.isMe ? 'You' : msg.username}
+                </span>
+                <span className="text-[10px] text-[#858585]">{timeString}</span>
+              </div>
+              <div className="text-[13px] leading-relaxed text-[#cccccc] break-words">
+                {msg.text}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
 
       <form 
         onSubmit={sendMessage}
-        style={{
-          padding: '12px',
-          borderTop: '1px solid var(--border-color)',
-          display: 'flex',
-          gap: '8px'
-        }}
+        className="p-3 border-t border-[#3b3b3b] flex gap-2 shrink-0 bg-[#252526]"
       >
         <input 
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder="Message..."
-          style={{
-            flex: 1,
-            backgroundColor: 'var(--bg-tertiary)',
-            border: '1px solid var(--border-light)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '4px',
-            outline: 'none',
-            fontSize: '13px'
-          }}
+          className="flex-1 bg-[#3c3c3c] border border-transparent focus:border-[#007acc] text-[#cccccc] px-2 py-1.5 outline-none text-[13px] transition-colors placeholder-[#858585]"
         />
         <button 
           type="submit"
           disabled={!input.trim()}
-          style={{
-            backgroundColor: input.trim() ? 'var(--accent-color)' : 'var(--bg-tertiary)',
-            color: 'white',
-            padding: '8px',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+          className={`px-3 py-1.5 flex items-center justify-center transition-colors ${
+            input.trim() 
+              ? 'bg-[#007acc] text-white hover:bg-[#005f9e] cursor-pointer' 
+              : 'bg-[#3c3c3c] text-[#858585] cursor-not-allowed'
+          }`}
+          title="Send"
         >
-          <Send size={16} />
+          <Send size={14} />
         </button>
       </form>
     </div>

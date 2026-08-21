@@ -22,7 +22,7 @@ const Workspace = () => {
   
   // Tab Management
   const [openFiles, setOpenFiles] = useState([]);
-  const [activeFileId, setActiveFileId] = useState(null);
+  const [activeFileId, setActiveFileId] = useState('3d-view');
 
   // Layout State
   const [showSettings, setShowSettings] = useState(false);
@@ -44,8 +44,11 @@ const Workspace = () => {
       setConnectionStatus('Disconnected');
     });
     
-    newSocket.on('connect_error', () => {
+    newSocket.on('connect_error', (err) => {
       setConnectionStatus('Reconnecting...');
+      if (err.message === 'Authentication error' || err.message === 'invalid token' || err.message === 'xhr poll error') {
+        handleLogout();
+      }
     });
     
     newSocket.on('presence:list', (users) => setCollaborators(users));
@@ -81,6 +84,9 @@ const Workspace = () => {
         setFiles(res.data);
       } catch (error) {
         console.error('Error fetching files', error);
+        if (error.response?.status === 401) {
+          handleLogout();
+        }
       }
     };
     fetchFiles();
@@ -106,10 +112,15 @@ const Workspace = () => {
     }
   };
 
+import StatusBar from '../components/StatusBar';
+import { Files, Search, GitBranch, Play, Settings as SettingsIcon } from 'lucide-react';
+
+// Inside Workspace return statement:
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+    <div className="flex flex-col h-screen w-full bg-[#1e1e1e] overflow-hidden font-sans">
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       
+      {/* Optional Top Header (Title bar) */}
       <TopHeader 
         roomId={roomId}
         connectionStatus={connectionStatus}
@@ -119,43 +130,70 @@ const Workspace = () => {
         onOpenSettings={() => setShowSettings(true)}
       />
       
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <FileExplorer 
-          roomId={roomId}
-          token={user.token}
-          files={files}
-          setFiles={setFiles}
-          activeFileId={activeFileId}
-          onOpenFile={handleOpenFile}
-          socket={socket}
-        />
+      {/* Main IDE Content */}
+      <div className="flex flex-1 overflow-hidden h-[calc(100vh-var(--header-height)-24px)]">
         
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <EditorArea 
+        {/* Activity Bar (VS Code Left Strip) */}
+        <div className="w-[var(--activity-bar-width)] bg-[#333333] flex flex-col items-center py-2 gap-4 border-r border-[#252526] shrink-0 z-10 text-[#858585]">
+          <div className="p-2 text-white border-l-2 border-[#007acc] cursor-pointer"><Files size={24} strokeWidth={1.5} /></div>
+          <div className="p-2 hover:text-white cursor-pointer"><Search size={24} strokeWidth={1.5} /></div>
+          <div className="p-2 hover:text-white cursor-pointer"><GitBranch size={24} strokeWidth={1.5} /></div>
+          <div className="p-2 hover:text-white cursor-pointer"><Play size={24} strokeWidth={1.5} /></div>
+          <div className="mt-auto p-2 hover:text-white cursor-pointer" onClick={() => setShowSettings(true)}><SettingsIcon size={24} strokeWidth={1.5} /></div>
+        </div>
+
+        {/* Side Bar (File Explorer) */}
+        <div className="w-[var(--sidebar-width)] bg-[#252526] flex flex-col overflow-hidden shrink-0">
+          <FileExplorer 
             roomId={roomId}
             token={user.token}
             files={files}
             setFiles={setFiles}
-            openFiles={openFiles}
             activeFileId={activeFileId}
-            setActiveFileId={setActiveFileId}
-            handleCloseTab={handleCloseTab}
+            onOpenFile={handleOpenFile}
             socket={socket}
-            onToggleBottomPanel={() => setShowBottomPanel(!showBottomPanel)}
-          />
-          
-          <BottomPanel 
-            isOpen={showBottomPanel} 
-            onClose={() => setShowBottomPanel(false)} 
           />
         </div>
+        
+        {/* Editor Group */}
+        <div className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e] border-l border-[#3b3b3b]">
+          {/* Main Editor View */}
+          <div className="flex-1 overflow-hidden flex flex-col relative z-0">
+            <EditorArea 
+              roomId={roomId}
+              token={user.token}
+              files={files}
+              setFiles={setFiles}
+              openFiles={openFiles}
+              activeFileId={activeFileId}
+              setActiveFileId={setActiveFileId}
+              handleCloseTab={handleCloseTab}
+              socket={socket}
+              onToggleBottomPanel={() => setShowBottomPanel(!showBottomPanel)}
+            />
+          </div>
+          
+          {/* Panel (Terminal/Output) */}
+          <div className={`transition-all duration-300 ease-in-out bg-[#1e1e1e] flex flex-col border-t border-[#3b3b3b] ${showBottomPanel ? 'h-[250px]' : 'h-0 border-0'}`}>
+            <BottomPanel 
+              isOpen={showBottomPanel} 
+              onClose={() => setShowBottomPanel(false)} 
+            />
+          </div>
+        </div>
 
-        <ChatPanel 
-          socket={socket} 
-          roomId={roomId} 
-          username={user.username} 
-        />
+        {/* Right Sidebar (Chat) */}
+        <div className="w-[300px] bg-[#252526] flex flex-col overflow-hidden border-l border-[#3b3b3b] shrink-0">
+          <ChatPanel 
+            socket={socket} 
+            roomId={roomId} 
+            username={user.username} 
+          />
+        </div>
       </div>
+      
+      {/* Bottom Status Bar */}
+      <StatusBar connectionStatus={connectionStatus} />
     </div>
   );
 };

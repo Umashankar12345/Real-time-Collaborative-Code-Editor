@@ -32,19 +32,19 @@ module.exports = (io) => {
 
   io.on('connection', (socket) => {
     const username = socket.user.username;
-    
+
     socket.on('room:join', ({ roomId }) => {
       socket.join(roomId);
       const color = getColorForUser(username);
       connectedUsers.set(socket.id, { username, roomId, color });
-      
+
       // Notify others in room
       socket.to(roomId).emit('presence:user-joined', { username, color });
-      
+
       // Send current users in room to the newly joined user
       const usersInRoom = Array.from(connectedUsers.values())
         .filter(u => u.roomId === roomId);
-      
+
       // De-duplicate usernames for presence list (in case a user opens multiple tabs)
       const uniqueUsers = [];
       const seen = new Set();
@@ -54,7 +54,7 @@ module.exports = (io) => {
           uniqueUsers.push({ username: u.username, color: u.color });
         }
       }
-      
+
       socket.emit('presence:list', uniqueUsers);
     });
 
@@ -80,19 +80,19 @@ module.exports = (io) => {
         });
       }
     });
-    
+
     socket.on('file:create', ({ roomId, file }) => {
       socket.to(roomId).emit('file:created', file);
     });
-    
+
     socket.on('file:rename', ({ roomId, fileId, name }) => {
       socket.to(roomId).emit('file:renamed', { fileId, name });
     });
-    
+
     socket.on('file:delete', ({ roomId, fileId }) => {
       socket.to(roomId).emit('file:deleted', { fileId });
     });
-    
+
     socket.on('file:language', ({ roomId, fileId, language }) => {
       socket.to(roomId).emit('file:language-changed', { fileId, language });
     });
@@ -119,11 +119,11 @@ module.exports = (io) => {
       if (userData) {
         const { roomId, username } = userData;
         connectedUsers.delete(socket.id);
-        
+
         // Check if user has other open tabs
         const isStillInRoom = Array.from(connectedUsers.values())
           .some(u => u.username === username && u.roomId === roomId);
-          
+
         if (!isStillInRoom) {
           socket.to(roomId).emit('presence:user-left', { username });
         }

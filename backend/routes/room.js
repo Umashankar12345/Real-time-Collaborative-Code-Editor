@@ -26,7 +26,7 @@ router.get('/:roomId/files', authMiddleware, (req, res) => {
 router.post('/:roomId/files', authMiddleware, (req, res) => {
   const { roomId } = req.params;
   const { name, language } = req.body;
-  
+
   if (!name) return res.status(400).json({ message: 'File name required' });
 
   const id = Date.now().toString();
@@ -47,7 +47,7 @@ router.put('/:roomId/files/:fileId/rename', authMiddleware, (req, res) => {
   const { name } = req.body;
   const file = files.find(f => f.id === fileId);
   if (!file) return res.status(404).json({ message: 'File not found' });
-  
+
   file.name = name;
   res.json(file);
 });
