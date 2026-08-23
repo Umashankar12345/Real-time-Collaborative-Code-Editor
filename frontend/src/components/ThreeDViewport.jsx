@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, TransformControls, Environment, Grid, Html } from '@react-three/drei';
-import { Maximize, RotateCcw, Box, Eye, Focus, MousePointer2, Move, Rotate3D, Scaling } from 'lucide-react';
+import { Maximize, RotateCcw, Box, Eye, Focus, MousePointer2, Move, Rotate3D, Scaling, Grid as GridIcon } from 'lucide-react';
 import * as THREE from 'three';
 
 const SceneStats = () => {
@@ -156,7 +156,7 @@ const ThreeDViewport = () => {
               onClick={() => setShowGrid(!showGrid)}
               title="Toggle Grid"
             >
-              <Grid size={14} />
+              <GridIcon size={14} />
             </button>
             <button 
               className={`p-1 rounded flex items-center justify-center transition-colors ${showWireframe ? 'bg-[#454545] text-white' : 'text-[#cccccc] hover:bg-[#454545]'}`}
