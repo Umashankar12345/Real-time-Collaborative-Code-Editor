@@ -125,9 +125,13 @@ const FloatingScene = () => {
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { login, register } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -136,14 +140,44 @@ const Login = () => {
     e.preventDefault();
     setError('');
     
-    if (!username || !password) {
-      setError('Please fill all fields');
-      return;
+    if (isLogin) {
+      if (!username || !password) {
+        setError('Please fill all fields');
+        return;
+      }
+    } else {
+      if (!fullName || !email || !username || !password || !confirmPassword) {
+        setError('Please fill all fields');
+        return;
+      }
+      
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters long');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
     }
 
-    const action = isLogin ? login : register;
-    const result = await action(username, password);
+    setIsSubmitting(true);
     
+    let result;
+    if (isLogin) {
+      result = await login(username, password);
+    } else {
+      result = await register({ fullName, email, username, password });
+    }
+    
+    setIsSubmitting(false);
+
     if (result.success) {
       navigate('/');
     } else {
@@ -204,6 +238,37 @@ const Login = () => {
         )}
         
         <form onSubmit={handleSubmit} className="space-y-5 relative">
+          {!isLogin && (
+            <>
+              <div>
+                <label className="block text-[#E4E4E7] text-sm font-medium mb-2">
+                  Full Name
+                </label>
+                <input 
+                  type="text" 
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-4 py-3.5 bg-[#09090B]/60 border border-[#3F3F46]/50 rounded-xl text-white text-[0.95rem] outline-none transition-all duration-300 focus:border-[#00F5FF] focus:ring-1 focus:ring-[#00F5FF]/50 placeholder:text-[#52525B]"
+                  placeholder="John Doe"
+                  required={!isLogin}
+                />
+              </div>
+              <div>
+                <label className="block text-[#E4E4E7] text-sm font-medium mb-2">
+                  Email
+                </label>
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3.5 bg-[#09090B]/60 border border-[#3F3F46]/50 rounded-xl text-white text-[0.95rem] outline-none transition-all duration-300 focus:border-[#00F5FF] focus:ring-1 focus:ring-[#00F5FF]/50 placeholder:text-[#52525B]"
+                  placeholder="john@example.com"
+                  required={!isLogin}
+                />
+              </div>
+            </>
+          )}
+
           <div>
             <label className="block text-[#E4E4E7] text-sm font-medium mb-2">
               Username
@@ -233,11 +298,28 @@ const Login = () => {
             />
           </div>
 
+          {!isLogin && (
+            <div>
+              <label className="block text-[#E4E4E7] text-sm font-medium mb-2">
+                Confirm Password
+              </label>
+              <input 
+                type="password" 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3.5 bg-[#09090B]/60 border border-[#3F3F46]/50 rounded-xl text-white text-[0.95rem] outline-none transition-all duration-300 focus:border-[#00F5FF] focus:ring-1 focus:ring-[#00F5FF]/50 placeholder:text-[#52525B]"
+                placeholder="••••••••"
+                required={!isLogin}
+              />
+            </div>
+          )}
+
           <button 
             type="submit" 
-            className="w-full py-3.5 mt-2 bg-gradient-to-r from-[#00A8FF] to-[#8B5CF6] hover:from-[#8B5CF6] hover:to-[#EC4899] text-white rounded-xl text-base font-semibold tracking-wide transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(236,72,153,0.4)]"
+            disabled={isSubmitting}
+            className="w-full py-3.5 mt-2 bg-gradient-to-r from-[#00A8FF] to-[#8B5CF6] hover:from-[#8B5CF6] hover:to-[#EC4899] text-white rounded-xl text-base font-semibold tracking-wide transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(236,72,153,0.4)] disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {isLogin ? 'Sign In' : 'Sign Up'}
+            {isSubmitting ? (isLogin ? 'Signing In...' : 'Creating Account...') : (isLogin ? 'Sign In' : 'Sign Up')}
           </button>
         </form>
         

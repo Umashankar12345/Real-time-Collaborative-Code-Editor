@@ -62,7 +62,11 @@ const Dashboard = () => {
 
   const getAvatarInitials = (name) => {
     if (!name) return 'U';
-    return name.charAt(0).toUpperCase();
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -180,11 +184,11 @@ const Dashboard = () => {
             
             <div className="flex items-center gap-3 cursor-pointer group">
               <div className="flex flex-col items-end">
-                <span className="text-sm font-bold text-white group-hover:text-[#00A8FF] transition-colors">{user?.username || 'Developer'}</span>
+                <span className="text-sm font-bold text-white group-hover:text-[#00A8FF] transition-colors">{user?.fullName || 'Developer'}</span>
                 <span className="text-[10px] text-[#A1A1AA]">{user?.email || 'dev@codecollab.com'}</span>
               </div>
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#EC4899] flex items-center justify-center text-white font-bold border-2 border-[#18181B] shadow-sm">
-                {getAvatarInitials(user?.username)}
+                {getAvatarInitials(user?.fullName)}
               </div>
             </div>
           </div>
@@ -199,7 +203,7 @@ const Dashboard = () => {
             
             <div className="relative z-10">
               <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
-                Welcome back, {user?.username}! <span>👋</span>
+                Welcome back, {user?.fullName || user?.username}! <span>👋</span>
               </h1>
               <p className="text-[#A1A1AA]">Let's build something amazing together.</p>
             </div>
@@ -468,7 +472,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between bg-[#18181B] p-2 -mx-2 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#EC4899] flex items-center justify-center text-xs font-bold text-white shrink-0">{getAvatarInitials(user?.username)}</div>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#EC4899] flex items-center justify-center text-xs font-bold text-white shrink-0">{getAvatarInitials(user?.fullName)}</div>
                   <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#22C55E] border-2 border-[#18181B] rounded-full"></div>
                 </div>
                 <div>

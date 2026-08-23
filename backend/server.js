@@ -4,6 +4,8 @@ const cors = require('cors');
 
 const { Server } = require('socket.io');
 const dotenv = require('dotenv');
+const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 
 dotenv.config();
 
@@ -16,13 +18,24 @@ const io = new Server(server, {
   },
 });
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // Vite default port
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
 
-// In-memory data store will be used for persistence
-
-
-// Basic health check route
+// Connect to MongoDB
+const connectDB = async () => {
+  try {
+    const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/codecollab';
+    await mongoose.connect(MONGO_URI);
+    console.log('MongoDB Connected');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+  }
+};
+connectDB();// Basic health check route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
