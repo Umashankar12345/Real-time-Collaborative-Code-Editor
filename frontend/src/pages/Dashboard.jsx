@@ -7,48 +7,55 @@ import {
   ChevronRight, Plus, Link, FilePlus, Download, MoreHorizontal,
   Circle, Box as BoxIcon, Globe
 } from 'lucide-react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Box as ThreeBox, Sphere as ThreeSphere, Torus, Float, Environment, Text } from '@react-three/drei';
-
-const Scene = () => {
-  const groupRef = useRef();
-  
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime();
-    if (groupRef.current) {
-      groupRef.current.rotation.y = t * 0.2;
-      groupRef.current.position.y = Math.sin(t * 1) * 0.1;
-    }
-  });
-
-  return (
-    <group ref={groupRef}>
-      <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
-        <ThreeBox args={[1.5, 1, 0.1]} position={[0, 0.5, 0]} material-color="#1e1e24" material-roughness={0.2} material-metalness={0.8} />
-        <Text position={[0, 0.5, 0.06]} fontSize={0.3} color="#00F5FF">{'</>'}</Text>
-      </Float>
-      <Float speed={1.5} rotationIntensity={1} floatIntensity={1.5}>
-        <ThreeBox args={[0.5, 0.5, 0.5]} position={[-1, 1.5, -1]} material-color="#00A8FF" material-roughness={0.2} material-metalness={0.8} />
-      </Float>
-      <Float speed={2.5} rotationIntensity={1.5} floatIntensity={1}>
-        <ThreeSphere args={[0.3, 32, 32]} position={[1.5, 1, 1]} material-color="#8B5CF6" material-roughness={0.2} material-metalness={0.8} />
-      </Float>
-      <Float speed={1} rotationIntensity={2} floatIntensity={2}>
-        <Torus args={[0.3, 0.1, 16, 32]} position={[1, -0.5, 0.5]} material-color="#00F5FF" material-roughness={0.2} material-metalness={0.8} />
-      </Float>
-    </group>
-  );
-};
 
 const Mini3DIllustration = () => {
   return (
-    <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[2, 5, 2]} intensity={1} />
-      <pointLight position={[-2, -2, -2]} color="#EC4899" intensity={2} />
-      <Environment preset="city" />
-      <Scene />
-    </Canvas>
+    <div className="w-full h-full relative flex items-center justify-center">
+      {/* Decorative blurred backgrounds */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-[#00A8FF]/20 rounded-full blur-xl mix-blend-screen animate-pulse"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/4 -translate-y-3/4 w-24 h-24 bg-[#8B5CF6]/20 rounded-full blur-xl mix-blend-screen animate-pulse delay-700"></div>
+      
+      {/* 3D Code Floating Elements (CSS only) */}
+      <div className="relative z-10 w-40 h-32 perspective-1000 transform-style-3d group">
+        
+        {/* Main code block */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#18181B] to-[#0F0F13] border border-[#27272A] rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden animate-[float_6s_ease-in-out_infinite] group-hover:border-[#00A8FF]/50 transition-colors duration-500">
+          <div className="h-6 border-b border-[#27272A] flex items-center px-3 gap-1.5 bg-[#0F0F13]">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[#22C55E]"></div>
+          </div>
+          <div className="p-4 flex-1 flex flex-col gap-2">
+            <div className="h-2 w-3/4 bg-[#27272A] rounded-full"></div>
+            <div className="h-2 w-1/2 bg-[#00A8FF]/60 rounded-full"></div>
+            <div className="h-2 w-5/6 bg-[#8B5CF6]/60 rounded-full"></div>
+            <div className="h-2 w-2/3 bg-[#27272A] rounded-full"></div>
+            <div className="mt-auto self-end font-mono text-xs font-bold text-[#00F5FF] opacity-80">
+              {'</>'}
+            </div>
+          </div>
+        </div>
+
+        {/* Floating accent 1 */}
+        <div className="absolute -top-4 -right-4 w-12 h-12 bg-gradient-to-tr from-[#8B5CF6] to-[#EC4899] rounded-lg shadow-lg rotate-12 animate-[float_5s_ease-in-out_infinite_reverse] opacity-80 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 font-bold text-xs">
+          JS
+        </div>
+
+        {/* Floating accent 2 */}
+        <div className="absolute -bottom-2 -left-4 w-10 h-10 bg-gradient-to-br from-[#00A8FF] to-[#3B82F6] rounded-full shadow-lg -rotate-12 animate-[float_4s_ease-in-out_infinite_0.5s] opacity-80 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50">
+          ⚛
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0) rotateX(5deg) rotateY(-5deg); }
+          50% { transform: translateY(-10px) rotateX(8deg) rotateY(-2deg); }
+        }
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+      `}</style>
+    </div>
   );
 };
 
