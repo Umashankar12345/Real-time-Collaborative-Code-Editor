@@ -5,12 +5,12 @@ import {
   Home, FolderKanban, Users, Mail, Folder, Star, LayoutTemplate, 
   User, Settings, CreditCard, LogOut, Search, Bell, HelpCircle, 
   ChevronRight, Plus, Link, FilePlus, Download, MoreHorizontal,
-  Circle
+  Circle, Box as BoxIcon, Globe
 } from 'lucide-react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Box, Sphere, Torus, Float, Environment, Text } from '@react-three/drei';
+import { Box as ThreeBox, Sphere as ThreeSphere, Torus, Float, Environment, Text } from '@react-three/drei';
 
-const Mini3DIllustration = () => {
+const Scene = () => {
   const groupRef = useRef();
   
   useFrame((state) => {
@@ -22,26 +22,32 @@ const Mini3DIllustration = () => {
   });
 
   return (
+    <group ref={groupRef}>
+      <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
+        <ThreeBox args={[1.5, 1, 0.1]} position={[0, 0.5, 0]} material-color="#1e1e24" material-roughness={0.2} material-metalness={0.8} />
+        <Text position={[0, 0.5, 0.06]} fontSize={0.3} color="#00F5FF">{'</>'}</Text>
+      </Float>
+      <Float speed={1.5} rotationIntensity={1} floatIntensity={1.5}>
+        <ThreeBox args={[0.5, 0.5, 0.5]} position={[-1, 1.5, -1]} material-color="#00A8FF" material-roughness={0.2} material-metalness={0.8} />
+      </Float>
+      <Float speed={2.5} rotationIntensity={1.5} floatIntensity={1}>
+        <ThreeSphere args={[0.3, 32, 32]} position={[1.5, 1, 1]} material-color="#8B5CF6" material-roughness={0.2} material-metalness={0.8} />
+      </Float>
+      <Float speed={1} rotationIntensity={2} floatIntensity={2}>
+        <Torus args={[0.3, 0.1, 16, 32]} position={[1, -0.5, 0.5]} material-color="#00F5FF" material-roughness={0.2} material-metalness={0.8} />
+      </Float>
+    </group>
+  );
+};
+
+const Mini3DIllustration = () => {
+  return (
     <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
       <ambientLight intensity={0.5} />
       <directionalLight position={[2, 5, 2]} intensity={1} />
       <pointLight position={[-2, -2, -2]} color="#EC4899" intensity={2} />
       <Environment preset="city" />
-      <group ref={groupRef}>
-        <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
-          <Box args={[1.5, 1, 0.1]} position={[0, 0.5, 0]} material-color="#1e1e24" material-roughness={0.2} material-metalness={0.8} />
-          <Text position={[0, 0.5, 0.06]} fontSize={0.3} color="#00F5FF">{'</>'}</Text>
-        </Float>
-        <Float speed={1.5} rotationIntensity={1} floatIntensity={1.5}>
-          <Box args={[0.5, 0.5, 0.5]} position={[-1, 1.5, -1]} material-color="#00A8FF" material-roughness={0.2} material-metalness={0.8} />
-        </Float>
-        <Float speed={2.5} rotationIntensity={1.5} floatIntensity={1}>
-          <Sphere args={[0.3, 32, 32]} position={[1.5, 1, 1]} material-color="#8B5CF6" material-roughness={0.2} material-metalness={0.8} />
-        </Float>
-        <Float speed={1} rotationIntensity={2} floatIntensity={2}>
-          <Torus args={[0.3, 0.1, 16, 32]} position={[1, -0.5, 0.5]} material-color="#00F5FF" material-roughness={0.2} material-metalness={0.8} />
-        </Float>
-      </group>
+      <Scene />
     </Canvas>
   );
 };
@@ -338,7 +344,7 @@ const Dashboard = () => {
               <div className="bg-[#0F0F13] border border-[#27272A] hover:border-[#22C55E]/50 p-4 rounded-xl cursor-pointer group transition-colors">
                 <div className="flex justify-between items-start mb-3">
                   <div className="w-10 h-10 rounded-lg bg-[#22C55E]/10 text-[#22C55E] flex items-center justify-center">
-                    <Box size={20} />
+                    <BoxIcon size={20} />
                   </div>
                   <span className="text-[10px] font-bold bg-[#18181B] border border-[#27272A] px-2 py-0.5 rounded text-[#22C55E]">3D</span>
                 </div>
@@ -349,7 +355,7 @@ const Dashboard = () => {
               <div className="bg-[#0F0F13] border border-[#27272A] hover:border-[#8B5CF6]/50 p-4 rounded-xl cursor-pointer group transition-colors">
                 <div className="flex justify-between items-start mb-3">
                   <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 text-[#8B5CF6] flex items-center justify-center">
-                    <Sphere size={20} />
+                    <Globe size={20} />
                   </div>
                   <span className="text-[10px] font-bold bg-[#18181B] border border-[#27272A] px-2 py-0.5 rounded text-[#8B5CF6]">3D</span>
                 </div>
@@ -386,106 +392,7 @@ const Dashboard = () => {
 
       {/* RIGHT SIDEBAR */}
       <div className="w-[280px] bg-[#0F0F13] border-l border-[#27272A] flex flex-col shrink-0">
-        
-        {/* Activity Feed */}
-        <div className="p-6 border-b border-[#27272A]">
-          <div className="flex justify-between items-end mb-4">
-            <h2 className="text-sm font-bold text-white">Activity Feed</h2>
-            <span className="text-xs text-[#00A8FF] hover:text-white cursor-pointer font-medium flex items-center gap-1">View all <ChevronRight size={12} /></span>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">A</div>
-              <div>
-                <p className="text-xs text-[#E4E4E7] leading-tight"><span className="font-bold">Aman Sharma</span> joined the room <span className="text-[#A1A1AA]">WebGL Playground</span></p>
-                <span className="text-[10px] text-[#71717A]">2m ago</span>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-pink-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">R</div>
-              <div>
-                <p className="text-xs text-[#E4E4E7] leading-tight"><span className="font-bold">Riya Patel</span> pushed changes in <span className="text-[#A1A1AA]">Three.js Learning</span></p>
-                <span className="text-[10px] text-[#71717A]">15m ago</span>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">Y</div>
-              <div>
-                <p className="text-xs text-[#E4E4E7] leading-tight"><span className="font-bold">You</span> created a new room <span className="text-[#00A8FF]">default-room-913</span></p>
-                <span className="text-[10px] text-[#71717A]">2h ago</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Online Members */}
-        <div className="p-6 border-b border-[#27272A] flex-1">
-          <div className="flex justify-between items-end mb-4">
-            <h2 className="text-sm font-bold text-white">Online Members</h2>
-            <span className="text-xs text-[#00A8FF] hover:text-white cursor-pointer font-medium flex items-center gap-1">View all <ChevronRight size={12} /></span>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white shrink-0">A</div>
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#22C55E] border-2 border-[#0F0F13] rounded-full"></div>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#E4E4E7]">Aman Sharma</p>
-                  <p className="text-[10px] text-[#A1A1AA]">Working on Three.js</p>
-                </div>
-              </div>
-              <Circle size={8} fill="#22C55E" className="text-[#22C55E]" />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-pink-600 flex items-center justify-center text-xs font-bold text-white shrink-0">R</div>
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#22C55E] border-2 border-[#0F0F13] rounded-full"></div>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#E4E4E7]">Riya Patel</p>
-                  <p className="text-[10px] text-[#A1A1AA]">Working on UI</p>
-                </div>
-              </div>
-              <Circle size={8} fill="#22C55E" className="text-[#22C55E]" />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center text-xs font-bold text-white shrink-0">K</div>
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#F59E0B] border-2 border-[#0F0F13] rounded-full"></div>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#E4E4E7]">Karan Verma</p>
-                  <p className="text-[10px] text-[#A1A1AA]">Reviewing Code</p>
-                </div>
-              </div>
-              <Circle size={8} fill="#F59E0B" className="text-[#F59E0B]" />
-            </div>
-
-            <div className="flex items-center justify-between bg-[#18181B] p-2 -mx-2 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#EC4899] flex items-center justify-center text-xs font-bold text-white shrink-0">{getAvatarInitials(user?.fullName)}</div>
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#22C55E] border-2 border-[#18181B] rounded-full"></div>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#E4E4E7]">You</p>
-                  <p className="text-[10px] text-[#A1A1AA]">Online</p>
-                </div>
-              </div>
-              <Circle size={8} fill="#22C55E" className="text-[#22C55E]" />
-            </div>
-
-            <p className="text-[10px] text-[#71717A]">+2 more members</p>
-          </div>
-        </div>
 
         {/* Storage Usage */}
         <div className="p-6">
