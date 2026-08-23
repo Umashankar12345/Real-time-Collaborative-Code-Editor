@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const axios = require('axios');
 const User = require('../models/User');
 const requireAuth = require('../middleware/requireAuth');
 
@@ -144,11 +145,126 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
-// GitHub OAuth Flow (Placeholder/Mock logic)
+// GitHub OAuth Flow
 router.get('/github/login', (req, res) => {
-  // Redirect user to github oauth page
-  // res.redirect(`https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}`);
-  res.json({ message: 'GitHub OAuth URL goes here' });
+  const clientId = process.env.GITHUB_CLIENT_ID;
+  const redirectUri = 'http://localhost:5000/api/auth/github/callback';
+  res.redirect(`https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`);
+});
+
+router.get('/github/callback', async (req, res) => {
+  try {
+    const { code } = req.query;
+    if (!code) return res.redirect('http://localhost:5173/?error=NoCodeProvided');
+
+    // Exchange code for token
+    const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
+      client_id: process.env.GITHUB_CLIENT_ID,
+      client_secret: process.env.GITHUB_CLIENT_SECRET,
+      code,
+    }, { headers: { Accept: 'application/json' } });
+
+    const accessToken = tokenResponse.data.access_token;
+    if (!accessToken) throw new Error('No access token received');
+
+    // Get user info
+    const userResponse = await axios.get('https://api.github.com/user', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    
+    // Get emails (GitHub primary email might be hidden)
+    const emailResponse = await axios.get('https://api.github.com/user/emails', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    
+    const primaryEmailObj = emailResponse.data.find(e => e.primary) || emailResponse.data[0];
+    const primaryEmail = primaryEmailObj.email;
+    const githubData = userResponse.data;
+
+    let user = await User.findOne({ $or: [{ githubId: githubData.id.toString() }, { email: primaryEmail }] });
+    
+    if (user) {
+      if (!user.githubId) {
+        user.githubId = githubData.id.toString();
+        await user.save();
+      }
+    } else {
+      user = new User({
+        fullName: githubData.name || githubData.login,
+        email: primaryEmail,
+        username: githubData.login + '_' + Math.floor(Math.random() * 10000), // Ensure unique
+        githubId: githubData.id.toString(),
+        avatar: githubData.avatar_url,
+        isEmailVerified: true // OAuth providers verify emails
+      });
+      await user.save();
+    }
+
+    generateTokenAndSetCookie(res, user._id);
+    res.redirect('http://localhost:5173/'); // Redirect to dashboard
+  } catch (error) {
+    console.error('GitHub OAuth error:', error.response?.data || error.message);
+    res.redirect('http://localhost:5173/?error=OAuthFailed');
+  }
+});
+
+// Google OAuth Flow
+router.get('/google/login', (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = 'http://localhost:5000/api/auth/google/callback';
+  const scope = 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`);
+});
+
+router.get('/google/callback', async (req, res) => {
+  try {
+    const { code } = req.query;
+    if (!code) return res.redirect('http://localhost:5173/?error=NoCodeProvided');
+
+    // Exchange code for token
+    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: 'http://localhost:5000/api/auth/google/callback'
+    });
+
+    const accessToken = tokenResponse.data.access_token;
+    if (!accessToken) throw new Error('No access token received');
+
+    // Get user info
+    const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    
+    const googleData = userResponse.data;
+
+    let user = await User.findOne({ $or: [{ googleId: googleData.id }, { email: googleData.email }] });
+    
+    if (user) {
+      if (!user.googleId) {
+        user.googleId = googleData.id;
+        await user.save();
+      }
+    } else {
+      user = new User({
+        fullName: googleData.name,
+        email: googleData.email,
+        username: googleData.email.split('@')[0] + '_' + Math.floor(Math.random() * 10000), // Ensure unique
+        googleId: googleData.id,
+        avatar: googleData.picture,
+        isEmailVerified: true
+      });
+      await user.save();
+    }
+
+    generateTokenAndSetCookie(res, user._id);
+    res.redirect('http://localhost:5173/'); // Redirect to dashboard
+  } catch (error) {
+    console.error('Google OAuth error:', error.response?.data || error.message);
+    res.redirect('http://localhost:5173/?error=OAuthFailed');
+  }
 });
 
 module.exports = router;
