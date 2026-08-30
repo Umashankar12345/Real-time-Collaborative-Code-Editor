@@ -24,7 +24,7 @@ const Workspace = () => {
   
   // Tab Management
   const [openFiles, setOpenFiles] = useState([]);
-  const [activeFileId, setActiveFileId] = useState('3d-view');
+  const [activeFileId, setActiveFileId] = useState(null);
 
   // Layout State
   const [showSettings, setShowSettings] = useState(false);

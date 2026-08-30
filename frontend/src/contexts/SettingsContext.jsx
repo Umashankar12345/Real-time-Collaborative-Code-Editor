@@ -4,6 +4,7 @@ export const SettingsContext = createContext();
 
 export const SettingsProvider = ({ children }) => {
   const defaultSettings = {
+    uiTheme: 'dark', // 'dark' or 'light'
     fontSize: 14,
     theme: 'vs-dark',
     wordWrap: 'off',
@@ -27,6 +28,13 @@ export const SettingsProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem('ide-settings', JSON.stringify(settings));
+    
+    // Apply light mode to body
+    if (settings.uiTheme === 'light') {
+      document.body.classList.add('light-mode');
+    } else {
+      document.body.classList.remove('light-mode');
+    }
   }, [settings]);
 
   const updateSettings = (newSettings) => {

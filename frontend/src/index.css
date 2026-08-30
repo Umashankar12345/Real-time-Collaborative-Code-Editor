@@ -132,3 +132,19 @@ a:hover {
 .animate-fade-in {
   animation: fadeIn 0.2s ease forwards;
 }
+
+/* Light Mode Global Toggle via CSS Filters */
+body.light-mode {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #f6f6f6; /* Optional adjustment */
+}
+
+/* Prevent double-inversion on specific elements */
+body.light-mode img,
+body.light-mode video,
+body.light-mode canvas,
+body.light-mode .monaco-editor,
+body.light-mode .no-invert,
+body.light-mode [data-no-invert="true"] {
+  filter: invert(1) hue-rotate(180deg);
+}

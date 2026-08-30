@@ -54,6 +54,9 @@ const SettingsModal = ({ onClose }) => {
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)', color: 'white', padding: '4px 8px', borderRadius: '4px', width: '120px' }}
               >
                 <option value="vs-dark">VS Dark</option>
+                <option value="github-dark">GitHub Dark</option>
+                <option value="dracula">Dracula</option>
+                <option value="monokai">Monokai</option>
                 <option value="light">Light</option>
                 <option value="hc-black">High Contrast</option>
               </select>
