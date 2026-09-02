@@ -112,13 +112,6 @@ const FileExplorer = ({ roomId, token, files, setFiles, activeFileId, onOpenFile
           >
             <FileText size={16} />
           </button>
-          <button 
-            onClick={() => alert('Folder support coming soon')}
-            className="p-1.5 rounded-md text-[var(--text-secondary)] hover:bg-white/10 hover:text-white transition-colors"
-            title="New Folder"
-          >
-            <FolderPlus size={16} />
-          </button>
         </div>
       </div>
 

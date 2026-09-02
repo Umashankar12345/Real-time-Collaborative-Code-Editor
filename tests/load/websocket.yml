@@ -1,0 +1,31 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 100
+      name: "Warm up phase"
+    - duration: 120
+      arrivalRate: 100
+      name: "Sustained load (100 new connections/sec)"
+  engines:
+    socketio: {}
+scenarios:
+  - name: "Simulate Yjs / Socket Collaboration"
+    engine: socketio
+    flow:
+      - emit:
+          channel: "room:join"
+          data:
+            roomId: "load-test-room-1"
+      - think: 1
+      - loop:
+        # Note: Yjs updates happen over standard WS on /yjs. 
+        # This simulates the Socket.io side (presence, cursor, chat)
+        - emit:
+            channel: "chat:message"
+            data:
+              roomId: "load-test-room-1"
+              message: "Load test message ${ $randomString() }"
+        - think: 2
+        count: 15

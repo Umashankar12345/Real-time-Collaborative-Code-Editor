@@ -58,28 +58,7 @@ module.exports = (io) => {
       socket.emit('presence:list', uniqueUsers);
     });
 
-    socket.on('document:update', ({ roomId, fileId, content }) => {
-      // Update in-memory file
-      const file = files.find(f => f.id === fileId);
-      if (file) {
-        file.content = content;
-      }
-      // Broadcast to others
-      socket.to(roomId).emit('document:update', { fileId, content });
-    });
 
-    socket.on('cursor:update', ({ roomId, fileId, position }) => {
-      const userData = connectedUsers.get(socket.id);
-      if (userData) {
-        socket.to(roomId).emit('cursor:update', {
-          userId: username,
-          username,
-          fileId,
-          position,
-          color: userData.color
-        });
-      }
-    });
 
     socket.on('file:create', ({ roomId, file }) => {
       socket.to(roomId).emit('file:created', file);

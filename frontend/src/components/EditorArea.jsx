@@ -1,21 +1,26 @@
 import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import Editor, { useMonaco } from '@monaco-editor/react';
 import axios from 'axios';
-import { Save, Cloud, Check, Play, Square, Bug, X, Search, Terminal, Box } from 'lucide-react';
+import { Save, Cloud, Check, Play, Square, Bug, X, Search, Terminal } from 'lucide-react';
 import { SettingsContext } from '../contexts/SettingsContext';
-import ThreeDViewport from './ThreeDViewport';
+import { AuthContext } from '../contexts/AuthContext';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
+import { MonacoBinding } from 'y-monaco';
 
-const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, setActiveFileId, handleCloseTab, socket, onToggleBottomPanel }) => {
+const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, setActiveFileId, handleCloseTab, socket, onToggleBottomPanel, setExecutionResult, setIsExecuting, isExecuting, setShowBottomPanel }) => {
   const file = files.find(f => f.id === activeFileId);
   const [content, setContent] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [syncStatus, setSyncStatus] = useState('✓ Synced'); // '● Saving...', '✓ Saved locally', '✓ Synced'
   
   const { settings } = useContext(SettingsContext);
+  const { user } = useContext(AuthContext);
   
   const editorRef = useRef(null);
-  const isRemoteUpdate = useRef(false);
-  const decorationsRef = useRef({});
+  const providerRef = useRef(null);
+  const bindingRef = useRef(null);
+  const ydocRef = useRef(null);
   const monaco = useMonaco();
   
   const languages = ['javascript', 'typescript', 'python', 'cpp', 'java', 'c', 'go', 'html', 'css', 'json'];
@@ -28,78 +33,63 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
     }
   }, [file]);
 
+  // Setup Yjs whenever the active file changes or editor mounts
   useEffect(() => {
-    if (!socket || !file) return;
+    if (!file || !editorRef.current || !monaco) return;
 
-    const handleDocUpdate = ({ fileId, content: newContent }) => {
-      if (fileId === file.id) {
-        isRemoteUpdate.current = true;
-        setContent(newContent);
+    // 1. Initialize Yjs document
+    const ydoc = new Y.Doc();
+    ydocRef.current = ydoc;
+
+    // 2. Connect to y-websocket server
+    const roomName = `${roomId}-${file.id}`;
+    const wsUrl = 'ws://localhost:5000/yjs'; // The path configured in server.js
+    const provider = new WebsocketProvider(wsUrl, roomName, ydoc);
+    providerRef.current = provider;
+
+    // 3. Set Awareness (Cursors)
+    if (user) {
+      provider.awareness.setLocalStateField('user', {
+        name: user.fullName || user.username || 'Anonymous',
+        color: getColorForUser(user.username || 'Anonymous')
+      });
+    }
+
+    // 4. Bind Yjs to Monaco Editor
+    const type = ydoc.getText('monaco');
+    const binding = new MonacoBinding(
+      type,
+      editorRef.current.getModel(),
+      new Set([editorRef.current]),
+      provider.awareness
+    );
+    bindingRef.current = binding;
+
+    // Listen for sync events
+    provider.on('status', event => {
+      if (event.status === 'connected') {
         setSyncStatus('✓ Synced with room');
+      } else {
+        setSyncStatus('● Reconnecting...');
       }
-    };
-    
-    const handleCursorUpdate = ({ userId, username, fileId, position, color }) => {
-      if (fileId !== file.id || !editorRef.current || !monaco || !settings.showCursors) return;
-      
-      const decorationId = decorationsRef.current[userId];
-      
-      const hoverMessage = settings.showUserNames ? { value: username } : undefined;
-      
-      const decorations = [
-        {
-          range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
-          options: {
-            className: `remote-cursor remote-cursor-${userId}`,
-            hoverMessage,
-            isWholeLine: false,
-          }
-        }
-      ];
-      
-      if (!document.getElementById(`style-${userId}`)) {
-        const style = document.createElement('style');
-        style.id = `style-${userId}`;
-        style.innerHTML = `
-          .remote-cursor-${userId} {
-            border-left: 2px solid ${color};
-            position: relative;
-          }
-          ${settings.showUserNames ? `
-          .remote-cursor-${userId}::after {
-            content: '${username}';
-            position: absolute;
-            top: -18px;
-            left: 0;
-            background-color: ${color};
-            color: white;
-            font-size: 10px;
-            padding: 2px 4px;
-            border-radius: 2px;
-            white-space: nowrap;
-            z-index: 10;
-            pointer-events: none;
-          }` : ''}
-        `;
-        document.head.appendChild(style);
-      }
-      
-      const newDecorationId = editorRef.current.deltaDecorations(
-        decorationId ? decorationId : [], 
-        decorations
-      );
-      
-      decorationsRef.current[userId] = newDecorationId;
-    };
-
-    socket.on('document:update', handleDocUpdate);
-    socket.on('cursor:update', handleCursorUpdate);
+    });
 
     return () => {
-      socket.off('document:update', handleDocUpdate);
-      socket.off('cursor:update', handleCursorUpdate);
+      binding.destroy();
+      provider.disconnect();
+      ydoc.destroy();
     };
-  }, [socket, file, monaco, settings.showCursors, settings.showUserNames]);
+  }, [file?.id, roomId, editorRef.current, monaco, user]);
+
+  // Helper to generate consistent colors for awareness
+  const getColorForUser = (username) => {
+    const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3', '#F3FF33', '#FF3380'];
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+      hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
 
   useEffect(() => {
     if (monaco) {
@@ -169,29 +159,45 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
 
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
+    
+    // Add custom styles for Yjs remote cursors
+    if (!document.getElementById('yjs-cursor-styles')) {
+      const style = document.createElement('style');
+      style.id = 'yjs-cursor-styles';
+      style.innerHTML = `
+        .yRemoteSelection {
+          background-color: rgba(250, 129, 0, 0.5);
+        }
+        .yRemoteSelectionHead {
+          position: absolute;
+          border-left: 2px solid orange;
+          height: 100%;
+        }
+        .yRemoteSelectionHead::after {
+          position: absolute;
+          content: attr(data-client-name);
+          top: -1.2em;
+          left: -2px;
+          background-color: orange;
+          color: white;
+          font-size: 11px;
+          padding: 2px 4px;
+          border-radius: 2px;
+          white-space: nowrap;
+          pointer-events: none;
+          z-index: 10;
+        }
+      `;
+      document.head.appendChild(style);
+    }
   };
 
   const handleEditorChange = (value) => {
-    if (!isRemoteUpdate.current) {
-      setContent(value);
-      setSyncStatus('● Saving...');
-      
-      socket?.emit('document:update', { roomId, fileId: file.id, content: value });
-      
-      saveToBackend(value);
-    } else {
-      isRemoteUpdate.current = false;
-    }
-  };
-
-  const handleCursorSelectionChange = (e) => {
-    if (socket && file && e.selection) {
-      socket.emit('cursor:update', {
-        roomId,
-        fileId: file.id,
-        position: e.selection.getPosition()
-      });
-    }
+    // With Yjs, we no longer need to emit socket events for every keystroke.
+    // The MonacoBinding handles everything internally!
+    // We only need to periodically save to the backend for persistence if desired,
+    // though y-websocket can also persist on the server side using LevelDB/Redis.
+    saveToBackend(value);
   };
 
   const saveToBackend = useCallback(
@@ -229,7 +235,30 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
     }
   };
 
-  if (!file && activeFileId !== '3d-view') {
+  const handleRunCode = async () => {
+    if (!file || isExecuting) return;
+    setIsExecuting(true);
+    setShowBottomPanel(true);
+    setExecutionResult({ type: 'running', message: `Executing ${file.name}...` });
+
+    try {
+      const response = await axios.post(
+        `http://localhost:5000/api/rooms/${roomId}/files/${file.id}/execute`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setExecutionResult({ type: 'success', data: response.data });
+    } catch (error) {
+      setExecutionResult({ 
+        type: 'error', 
+        message: error.response?.data?.message || 'Error executing code' 
+      });
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
+  if (!file) {
     return (
       <div className="flex flex-1 justify-center items-center text-[var(--text-secondary)] bg-[var(--bg-primary)]">
         <div className="flex flex-col items-center gap-4 animate-fade-in">
@@ -242,23 +271,10 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
     );
   }
 
-  const is3DView = activeFileId === '3d-view';
-
   return (
     <div className="flex flex-col h-full w-full bg-[var(--bg-primary)]">
       {/* Tabs */}
       <div className="flex overflow-x-auto bg-[#252526] custom-scrollbar shrink-0">
-        <div 
-          onClick={() => setActiveFileId('3d-view')}
-          className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors text-[13px] border-r border-[#3b3b3b] min-w-[120px] ${
-            is3DView 
-              ? 'bg-[var(--bg-primary)] text-white border-t border-t-[#007acc]' 
-              : 'bg-transparent text-[#969696] hover:bg-[#2a2d2e] border-t border-t-transparent'
-          }`}
-        >
-          <Box size={14} className={is3DView ? 'text-[#007acc]' : ''} />
-          <span>3D VIEW</span>
-        </div>
         {openFiles.map(id => {
           const tabFile = files.find(f => f.id === id);
           if (!tabFile) return null;
@@ -287,19 +303,23 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
         })}
       </div>
 
-      {/* Viewport/Editor */}
-      {is3DView ? (
-        <div className="flex-1 overflow-hidden">
-          <ThreeDViewport />
-        </div>
-      ) : (
-        <>
+      {/* Editor */}
+      <>
           {/* Editor Toolbar */}
           <div className="px-3 py-1.5 bg-[#252526] border-y border-[#3b3b3b] flex items-center justify-between shadow-sm shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 border-r border-[var(--border-color)] pr-4">
-            <button className="flex items-center gap-1.5 text-[var(--success-color)] opacity-60 cursor-not-allowed hover:bg-white/5 px-2 py-1 rounded transition-colors text-[13px] font-medium">
-              <Play size={14} /> <span className="hidden sm:inline">Run</span>
+            <button 
+              onClick={handleRunCode}
+              disabled={isExecuting}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors text-[13px] font-medium ${
+                isExecuting 
+                  ? 'text-gray-400 cursor-not-allowed opacity-60' 
+                  : 'text-[var(--success-color)] hover:bg-white/5 opacity-90'
+              }`}
+            >
+              <Play size={14} className={isExecuting ? "animate-pulse" : ""} /> 
+              <span className="hidden sm:inline">{isExecuting ? 'Running...' : 'Run'}</span>
             </button>
             <button className="flex items-center gap-1.5 text-[var(--error-color)] opacity-60 cursor-not-allowed hover:bg-white/5 px-2 py-1 rounded transition-colors text-[13px] font-medium">
               <Square size={14} /> <span className="hidden sm:inline">Stop</span>
@@ -366,17 +386,7 @@ const EditorArea = ({ roomId, token, files, setFiles, openFiles, activeFileId, s
         />
       </div>
       
-      
-      {editorRef.current && !is3DView && (
-         <div className="hidden">
-           {setTimeout(() => {
-              if (editorRef.current && !editorRef.current._hasAttachedCursorListener) {
-                editorRef.current.onDidChangeCursorPosition(handleCursorSelectionChange);
-                editorRef.current._hasAttachedCursorListener = true;
-              }
-           }, 100)}
-         </div>
-      )}
+
         </>
       )}
     </div>

@@ -10,7 +10,7 @@ import ChatPanel from '../components/ChatPanel';
 import BottomPanel from '../components/BottomPanel';
 import SettingsModal from '../components/SettingsModal';
 import StatusBar from '../components/StatusBar';
-import { Files, Search, GitBranch, Play, Settings as SettingsIcon } from 'lucide-react';
+import { Files, Settings as SettingsIcon } from 'lucide-react';
 
 const Workspace = () => {
   const { roomId } = useParams();
@@ -29,6 +29,10 @@ const Workspace = () => {
   // Layout State
   const [showSettings, setShowSettings] = useState(false);
   const [showBottomPanel, setShowBottomPanel] = useState(true);
+
+  // Execution State
+  const [executionResult, setExecutionResult] = useState(null);
+  const [isExecuting, setIsExecuting] = useState(false);
   
   useEffect(() => {
     const newSocket = io('http://localhost:5000', {
@@ -133,11 +137,8 @@ const Workspace = () => {
         
         {/* Activity Bar (VS Code Left Strip) */}
         <div className="w-[var(--activity-bar-width)] bg-[#333333] flex flex-col items-center py-2 gap-4 border-r border-[#252526] shrink-0 z-10 text-[#858585]">
-          <div className="p-2 text-white border-l-2 border-[#007acc] cursor-pointer"><Files size={24} strokeWidth={1.5} /></div>
-          <div className="p-2 hover:text-white cursor-pointer"><Search size={24} strokeWidth={1.5} /></div>
-          <div className="p-2 hover:text-white cursor-pointer"><GitBranch size={24} strokeWidth={1.5} /></div>
-          <div className="p-2 hover:text-white cursor-pointer"><Play size={24} strokeWidth={1.5} /></div>
-          <div className="mt-auto p-2 hover:text-white cursor-pointer" onClick={() => setShowSettings(true)}><SettingsIcon size={24} strokeWidth={1.5} /></div>
+          <div className="p-2 text-white border-l-2 border-[#007acc] cursor-pointer" title="Files"><Files size={24} strokeWidth={1.5} /></div>
+          <div className="mt-auto p-2 hover:text-white cursor-pointer" onClick={() => setShowSettings(true)} title="Settings"><SettingsIcon size={24} strokeWidth={1.5} /></div>
         </div>
 
         {/* Side Bar (File Explorer) */}
@@ -168,6 +169,10 @@ const Workspace = () => {
               handleCloseTab={handleCloseTab}
               socket={socket}
               onToggleBottomPanel={() => setShowBottomPanel(!showBottomPanel)}
+              setExecutionResult={setExecutionResult}
+              setIsExecuting={setIsExecuting}
+              isExecuting={isExecuting}
+              setShowBottomPanel={setShowBottomPanel}
             />
           </div>
           
@@ -176,6 +181,8 @@ const Workspace = () => {
             <BottomPanel 
               isOpen={showBottomPanel} 
               onClose={() => setShowBottomPanel(false)} 
+              executionResult={executionResult}
+              isExecuting={isExecuting}
             />
           </div>
         </div>
