@@ -5,7 +5,7 @@ import {
   Home, FolderKanban, Users, Mail, Folder, Star, LayoutTemplate, 
   User, Settings, CreditCard, LogOut, Search, Bell, HelpCircle, 
   ChevronRight, Plus, Link, FilePlus, Download, MoreHorizontal,
-  Circle, Box as BoxIcon, Globe, Code, Play, Sun, Moon, Github
+  Circle, Box as BoxIcon, Globe, Code, Play, Sun, Moon
 } from 'lucide-react';
 import SettingsModal from '../components/SettingsModal';
 import { SettingsContext } from '../contexts/SettingsContext';
@@ -55,6 +55,8 @@ const Dashboard = () => {
   const [storageFill, setStorageFill] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinRoomId, setJoinRoomId] = useState('');
 
   useEffect(() => {
     // Animate storage bar on mount
@@ -74,6 +76,22 @@ const Dashboard = () => {
     navigate(`/room/${roomId}`);
   };
 
+  const handleJoinRoom = (e) => {
+    if (e) e.preventDefault();
+    if (joinRoomId.trim()) {
+      navigate(`/room/${joinRoomId.trim()}`);
+    }
+  };
+
+  const handleTemplateClick = (templateName) => {
+    const roomId = `${templateName.toLowerCase().replace(/ /g, '-')}-${Math.floor(Math.random() * 10000)}`;
+    navigate(`/room/${roomId}`);
+  };
+
+  const handleNotImplemented = (feature) => {
+    alert(`${feature} feature is coming soon!`);
+  };
+
   const getAvatarInitials = (name) => {
     if (!name) return 'U';
     const parts = name.split(' ');
@@ -87,6 +105,60 @@ const Dashboard = () => {
     <div className="flex h-screen w-full bg-[#09090B] text-[#E4E4E7] font-sans overflow-hidden">
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       
+      {/* Join Room Modal */}
+      {showJoinModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-[#18181B] border border-[rgba(255,255,255,0.1)] rounded-2xl w-full max-w-md shadow-[0_8px_40px_rgba(0,0,0,0.4)] overflow-hidden relative" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-[rgba(255,255,255,0.06)] flex justify-between items-center bg-[#0F0F13]">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Link size={18} className="text-[#8B5CF6]" />
+                Join a Room
+              </h2>
+              <button onClick={() => setShowJoinModal(false)} className="text-[#71717A] hover:text-white transition-colors bg-[#18181B] p-1.5 rounded-lg hover:bg-[#27272A]">
+                <X size={16} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleJoinRoom} className="p-6">
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-[#A1A1AA] mb-2 uppercase tracking-wider">Room ID</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#71717A]">
+                    <Search size={16} />
+                  </div>
+                  <input
+                    type="text"
+                    value={joinRoomId}
+                    onChange={(e) => setJoinRoomId(e.target.value)}
+                    placeholder="e.g. room-1234 or react-starter-5678"
+                    className="w-full bg-[#09090B] border border-[rgba(255,255,255,0.1)] text-white text-sm rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-[#8B5CF6] transition-colors placeholder:text-[#52525B]"
+                    autoFocus
+                  />
+                </div>
+                <p className="text-xs text-[#71717A] mt-2 font-medium">Enter the exact room ID shared by your collaborator.</p>
+              </div>
+              
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowJoinModal(false)}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-[#A1A1AA] hover:text-white hover:bg-[#27272A] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!joinRoomId.trim()}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+                >
+                  Join Room
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* SIDEBAR */}
       <div className="w-[260px] bg-[#0F0F13] border-r border-[rgba(255,255,255,0.06)] flex flex-col shrink-0">
         <div className="p-6 flex items-center gap-3 border-b border-[rgba(255,255,255,0.06)]">
@@ -109,13 +181,13 @@ const Dashboard = () => {
             <span className="px-3 text-[11px] font-bold text-[#71717A] tracking-wider uppercase">Workspace</span>
           </div>
           <div className="space-y-1">
-            <div className="flex items-center gap-3 px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
+            <div onClick={() => handleNotImplemented('My Rooms')} className="flex items-center gap-3 px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
               <FolderKanban size={18} /> <span className="font-medium">My Rooms</span>
             </div>
-            <div className="flex items-center gap-3 px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
+            <div onClick={() => setShowJoinModal(true)} className="flex items-center gap-3 px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
               <Users size={18} /> <span className="font-medium">Join Room</span>
             </div>
-            <div className="flex items-center justify-between px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
+            <div onClick={() => handleNotImplemented('Invitations')} className="flex items-center justify-between px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
               <div className="flex items-center gap-3">
                 <Mail size={18} /> <span className="font-medium">Invitations</span>
               </div>
@@ -127,13 +199,13 @@ const Dashboard = () => {
             <span className="px-3 text-[11px] font-bold text-[#71717A] tracking-wider uppercase">Projects</span>
           </div>
           <div className="space-y-1">
-            <div className="flex items-center gap-3 px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
+            <div onClick={() => handleNotImplemented('My Projects')} className="flex items-center gap-3 px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
               <Folder size={18} /> <span className="font-medium">My Projects</span>
             </div>
-            <div className="flex items-center gap-3 px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
+            <div onClick={() => handleNotImplemented('Starred')} className="flex items-center gap-3 px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
               <Star size={18} /> <span className="font-medium">Starred</span>
             </div>
-            <div className="flex items-center gap-3 px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
+            <div onClick={() => handleNotImplemented('Templates')} className="flex items-center gap-3 px-3 py-2 text-[#71717A] hover:text-white hover:bg-[#18181B] rounded-lg cursor-pointer transition-colors">
               <LayoutTemplate size={18} /> <span className="font-medium">Templates</span>
             </div>
           </div>
@@ -205,7 +277,7 @@ const Dashboard = () => {
                 <HelpCircle size={20} />
               </div>
               <a href="https://github.com/Umashankar12345/Real-time-Collaborative-Code-Editor" target="_blank" rel="noreferrer" className="cursor-pointer text-[#71717A] hover:text-white transition-colors">
-                <Github size={20} />
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.02c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A4.8 4.8 0 0 0 8 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
               </a>
             </div>
             
@@ -298,7 +370,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#8B5CF6]/40 p-5 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)]">
+              <div onClick={() => setShowJoinModal(true)} className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#8B5CF6]/40 p-5 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)]">
                 <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 text-[#8B5CF6] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Link size={20} />
                 </div>
@@ -309,7 +381,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#10B981]/40 p-5 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)]">
+              <div onClick={() => handleNotImplemented('New Project')} className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#10B981]/40 p-5 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)]">
                 <div className="w-10 h-10 rounded-lg bg-[#10B981]/10 text-[#10B981] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <FilePlus size={20} />
                 </div>
@@ -320,7 +392,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#F59E0B]/40 p-5 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)]">
+              <div onClick={() => handleNotImplemented('Import Project')} className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#F59E0B]/40 p-5 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)]">
                 <div className="w-10 h-10 rounded-lg bg-[#F59E0B]/10 text-[#F59E0B] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Download size={20} />
                 </div>
@@ -410,7 +482,7 @@ const Dashboard = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#10B981]/30 p-4 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.2)]">
+              <div onClick={() => handleTemplateClick('ThreeJS')} className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#10B981]/30 p-4 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.2)]">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-10 h-10 rounded-lg bg-[#10B981]/10 text-[#10B981] flex items-center justify-center">
                     <BoxIcon size={20} />
@@ -421,7 +493,7 @@ const Dashboard = () => {
                 <p className="text-xs text-[#71717A] font-medium">Basic Three.js scene with lights and camera</p>
               </div>
 
-              <div className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#8B5CF6]/30 p-4 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.2)]">
+              <div onClick={() => handleTemplateClick('WebGL')} className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#8B5CF6]/30 p-4 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.2)]">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 text-[#8B5CF6] flex items-center justify-center">
                     <Globe size={20} />
@@ -432,7 +504,7 @@ const Dashboard = () => {
                 <p className="text-xs text-[#71717A] font-medium">WebGL project setup with modern tools</p>
               </div>
 
-              <div className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#378ADD]/30 p-4 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.2)]">
+              <div onClick={() => handleTemplateClick('React')} className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#378ADD]/30 p-4 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.2)]">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-10 h-10 rounded-lg bg-[#378ADD]/10 text-[#378ADD] flex items-center justify-center font-bold text-lg">
                     ⚛
@@ -443,7 +515,7 @@ const Dashboard = () => {
                 <p className="text-xs text-[#71717A] font-medium">Modern React boilerplate</p>
               </div>
 
-              <div className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#F59E0B]/30 p-4 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.2)]">
+              <div onClick={() => handleTemplateClick('VanillaJS')} className="bg-[#0F0F13] border border-[rgba(255,255,255,0.06)] hover:border-[#F59E0B]/30 p-4 rounded-xl cursor-pointer group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.2)]">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-10 h-10 rounded-lg bg-[#F59E0B]/10 text-[#F59E0B] flex items-center justify-center font-bold text-sm">
                     JS
